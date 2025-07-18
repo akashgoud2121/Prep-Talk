@@ -11,9 +11,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Download, Star, FileText, FilterX, Zap, PauseCircle, TrendingUp, Rabbit, MicVocal, Hourglass, BrainCircuit, Speech, BookOpen } from "lucide-react";
+import { Download, Star, FileText, FilterX, Zap, PauseCircle, TrendingUp, Rabbit, MicVocal, Hourglass, BrainCircuit, Speech, BookOpen, ChevronDown } from "lucide-react";
 import TranscriptionDisplay from "./transcription-display";
 import { cn } from "@/lib/utils";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 
 interface AnalysisDashboardProps {
@@ -50,6 +51,47 @@ const MetricCard = ({
     </Card>
 );
 
+const ScoreCircle = ({ score }: { score: number }) => {
+    const circumference = 2 * Math.PI * 20; // 2 * pi * radius
+    const offset = circumference - (score / 10) * circumference;
+    let colorClass = 'text-green-500';
+    if (score < 5) colorClass = 'text-red-500';
+    else if (score < 8) colorClass = 'text-yellow-500';
+
+    return (
+        <div className="relative h-16 w-16 flex-shrink-0">
+            <svg className="h-full w-full" viewBox="0 0 44 44">
+                <circle
+                    className="text-muted/20"
+                    strokeWidth="4"
+                    stroke="currentColor"
+                    fill="transparent"
+                    r="20"
+                    cx="22"
+                    cy="22"
+                />
+                <circle
+                    className={cn("transition-all duration-1000 ease-in-out", colorClass)}
+                    strokeWidth="4"
+                    strokeDasharray={circumference}
+                    strokeDashoffset={offset}
+                    strokeLinecap="round"
+                    stroke="currentColor"
+                    fill="transparent"
+                    r="20"
+                    cx="22"
+                    cy="22"
+                    transform="rotate(-90 22 22)"
+                />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
+                <span className={cn("text-lg font-bold", colorClass)}>{score}</span>
+                <span className={cn("text-xs font-semibold text-muted-foreground", colorClass)}>/10</span>
+            </div>
+        </div>
+    );
+};
+
 
 const EvaluationCard = ({
   criterion,
@@ -62,23 +104,19 @@ const EvaluationCard = ({
   evaluation: string;
   feedback: string;
 }) => (
-  <Card className="flex flex-col bg-card/50 shadow-sm transition-transform hover:scale-105 hover:shadow-lg w-full">
-    <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-            <CardTitle className="font-headline text-md leading-tight">{criterion}</CardTitle>
-            <div className="flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-full bg-primary/10 border-2 border-primary text-primary font-bold text-sm">
-                {score}/10
+  <Card className="flex flex-col bg-card/50 shadow-sm transition-transform hover:scale-[1.02] hover:shadow-lg w-full">
+    <CardContent className="p-4 flex items-start gap-4">
+        <ScoreCircle score={score} />
+        <div className="flex-grow space-y-3">
+             <h3 className="font-headline text-md font-semibold leading-tight">{criterion}</h3>
+            <div>
+                <h4 className="font-semibold text-xs uppercase text-muted-foreground tracking-wider mb-1">Evaluation</h4>
+                <p className="text-sm text-foreground/80">{evaluation}</p>
             </div>
-        </div>
-    </CardHeader>
-    <CardContent className="flex-grow space-y-3">
-        <div>
-            <h4 className="font-semibold text-xs uppercase text-muted-foreground tracking-wider mb-1">Evaluation</h4>
-            <p className="text-sm text-foreground/80">{evaluation}</p>
-        </div>
-         <div>
-            <h4 className="font-semibold text-xs uppercase text-muted-foreground tracking-wider mb-1">Feedback</h4>
-            <p className="text-sm text-foreground/80">{feedback}</p>
+            <div>
+                <h4 className="font-semibold text-xs uppercase text-muted-foreground tracking-wider mb-1">Feedback</h4>
+                <p className="text-sm text-foreground/80">{feedback}</p>
+            </div>
         </div>
     </CardContent>
   </Card>
@@ -164,30 +202,36 @@ export default function AnalysisDashboard({
         </div>
       </div>
       
-       <div className="space-y-8">
+       <div className="space-y-4">
         <h2 className="font-headline text-2xl font-semibold">Detailed Feedback</h2>
-        {Object.entries(groupedCriteria).map(([category, items]) => {
-          const CategoryIcon = categoryIcons[category] || Star;
-          return (
-            <div key={category} className="space-y-4 rounded-lg border border-border p-6 shadow-md bg-card/20">
-              <div className="flex items-center gap-3">
-                 <CategoryIcon className="h-6 w-6 text-primary" />
-                 <h3 className="font-headline text-xl font-semibold">{category}</h3>
-              </div>
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-                {items.map((item, index) => (
-                  <EvaluationCard
-                    key={index}
-                    criterion={item.criteria}
-                    score={item.score}
-                    evaluation={item.evaluation}
-                    feedback={item.feedback}
-                  />
-                ))}
-              </div>
-            </div>
-          );
-        })}
+        <Accordion type="multiple" defaultValue={Object.keys(groupedCriteria)} className="w-full space-y-4">
+            {Object.entries(groupedCriteria).map(([category, items]) => {
+                const CategoryIcon = categoryIcons[category] || Star;
+                return (
+                    <AccordionItem key={category} value={category} className="border rounded-lg bg-card/50 shadow-md">
+                        <AccordionTrigger className="p-6 hover:no-underline">
+                            <div className="flex items-center gap-3">
+                                <CategoryIcon className="h-6 w-6 text-primary" />
+                                <h3 className="font-headline text-xl font-semibold">{category}</h3>
+                            </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="p-6 pt-0">
+                             <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
+                                {items.map((item, index) => (
+                                    <EvaluationCard
+                                        key={index}
+                                        criterion={item.criteria}
+                                        score={item.score}
+                                        evaluation={item.evaluation}
+                                        feedback={item.feedback}
+                                    />
+                                ))}
+                            </div>
+                        </AccordionContent>
+                    </AccordionItem>
+                )
+            })}
+        </Accordion>
       </div>
     </div>
   );
