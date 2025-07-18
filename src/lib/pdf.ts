@@ -66,6 +66,9 @@ export const generatePdfReport = (data: AnalyzeSpeechOutput): void => {
     `Speech Rate (WPM): ${metadata.speechRateWPM}`,
     `Pitch Variance: ${metadata.pitchVariance.toFixed(2)}`,
     `Average Pause (ms): ${metadata.averagePauseDurationMs}`,
+    `Pace Score: ${metadata.paceScore}/100`,
+    `Clarity Score: ${metadata.clarityScore}/100`,
+    `Pause Time: ${metadata.pausePercentage.toFixed(1)}%`,
   ];
   if (metadata.audioDurationSeconds) {
     metrics.push(

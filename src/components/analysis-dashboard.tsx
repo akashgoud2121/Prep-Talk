@@ -21,14 +21,19 @@ interface AnalysisDashboardProps {
 const MetricCard = ({
   title,
   value,
+  unit,
 }: {
   title: string;
   value: string | number;
+  unit?: string;
 }) => (
   <Card className="bg-secondary/30">
     <CardHeader className="pb-2">
       <CardDescription>{title}</CardDescription>
-      <CardTitle className="text-3xl font-bold font-headline">{value}</CardTitle>
+      <CardTitle className="text-3xl font-bold font-headline">
+        {value}
+        {unit && <span className="text-xl font-medium text-muted-foreground ml-1">{unit}</span>}
+      </CardTitle>
     </CardHeader>
   </Card>
 );
@@ -110,18 +115,15 @@ export default function AnalysisDashboard({
 
       <div className="space-y-4">
         <h2 className="font-headline text-2xl font-semibold">Key Metrics</h2>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <MetricCard title="Word Count" value={metadata.wordCount} />
             <MetricCard title="Filler Words" value={metadata.fillerWordCount} />
-            <MetricCard title="Speech Rate (WPM)" value={metadata.speechRateWPM} />
-            <MetricCard
-              title="Avg. Pause (ms)"
-              value={metadata.averagePauseDurationMs}
-            />
-             <MetricCard
-              title="Pitch Variance"
-              value={metadata.pitchVariance.toFixed(2)}
-            />
+            <MetricCard title="Speech Rate" value={metadata.speechRateWPM} unit="WPM" />
+            <MetricCard title="Avg. Pause" value={metadata.averagePauseDurationMs} unit="ms" />
+            <MetricCard title="Pitch Variance" value={metadata.pitchVariance.toFixed(2)} />
+            <MetricCard title="Pace Score" value={metadata.paceScore} unit="/ 100" />
+            <MetricCard title="Clarity Score" value={metadata.clarityScore} unit="/ 100" />
+            <MetricCard title="Pause Time" value={metadata.pausePercentage.toFixed(1)} unit="%" />
         </div>
       </div>
 

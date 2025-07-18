@@ -57,6 +57,9 @@ const AnalyzeSpeechOutputSchema = z.object({
     averagePauseDurationMs: z.number().describe('The average pause duration in milliseconds. If not available from the source, estimate based on text.'),
     pitchVariance: z.number().describe('The variance in pitch during the speech sample. If not available from the source, estimate based on text.'),
     audioDurationSeconds: z.number().optional().describe('The duration of the audio in seconds, if audio was provided.'),
+    paceScore: z.number().min(0).max(100).describe('A score from 0-100 indicating how well-paced the speech is. Ideal is between 140-160 WPM.'),
+    clarityScore: z.number().min(0).max(100).describe('A score from 0-100 indicating the clarity of pronunciation and articulation.'),
+    pausePercentage: z.number().min(0).max(100).describe('The percentage of total speaking time spent in pauses.'),
   }),
   highlightedTranscription: z.array(HighlightedSegmentSchema).optional().describe('The full transcription, segmented for highlighting filler words and pauses. Concatenating all text fields should reconstruct the full transcription with pause annotations.'),
   evaluationCriteria: z.array(
@@ -103,6 +106,9 @@ ${AnalyzeSpeechOutputSchema.description}\n\nFollow these instructions when gener
 - The fillerWordCount should be the number of filler words from the transcription. Filler words include: like, um, uh, so, you know, actually, basically, I mean, okay, right.
 - The averagePauseDurationMs should be a number estimated from the transcription.
 - The pitchVariance should be a number estimated from the transcription.
+- The paceScore should be a score from 0-100 based on the speechRateWPM. A rate between 140-160 WPM is ideal (100). The score should decrease as the rate moves away from this range.
+- The clarityScore should be a score from 0-100 based on an analysis of pronunciation, articulation, and mumbling in the transcription/audio.
+- The pausePercentage should be a number representing the estimated percentage of total time the speaker was pausing.
 - If the speechSample was an audio data URI, the audioDurationSeconds should be a number calculated from the audio data.
 - The highlightedTranscription must be an array of objects based on the full transcription. Segment the entire transcription into parts. For each part, specify if its type is 'default', 'filler' (for filler words like 'um', 'ah', 'like'), or 'pause' (for significant silences). The text for a pause should represent the pause, e.g., '[PAUSE: 1.2s]'. Concatenating all 'text' fields must reconstruct the full transcription with pause annotations. Do not leave this field empty.
 `,
