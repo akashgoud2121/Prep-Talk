@@ -10,14 +10,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Textarea } from "@/components/ui/textarea";
-import { Download } from "lucide-react";
+import { Download, Star } from "lucide-react";
+import TranscriptionDisplay from "./transcription-display";
 
 interface AnalysisDashboardProps {
   data: AnalyzeSpeechOutput;
@@ -31,7 +25,7 @@ const MetricCard = ({
   title: string;
   value: string | number;
 }) => (
-  <Card>
+  <Card className="bg-secondary/30">
     <CardHeader className="pb-2">
       <CardDescription>{title}</CardDescription>
       <CardTitle className="text-3xl font-bold font-headline">{value}</CardTitle>
@@ -39,24 +33,49 @@ const MetricCard = ({
   </Card>
 );
 
+const EvaluationCard = ({
+  criterion,
+  score,
+  evaluation,
+  feedback,
+}: {
+  criterion: string;
+  score: number;
+  evaluation: string;
+  feedback: string;
+}) => (
+  <Card className="flex flex-col">
+    <CardHeader className="pb-4">
+      <div className="flex items-start justify-between">
+        <CardTitle className="font-headline text-lg leading-tight">{criterion}</CardTitle>
+        <div className="flex items-center gap-1 text-primary font-bold">
+          <Star className="w-4 h-4 fill-primary" />
+          <span>{score}/10</span>
+        </div>
+      </div>
+    </CardHeader>
+    <CardContent className="flex-grow space-y-3">
+        <div>
+            <h4 className="font-semibold text-sm mb-1">Evaluation</h4>
+            <p className="text-sm text-muted-foreground">{evaluation}</p>
+        </div>
+         <div>
+            <h4 className="font-semibold text-sm mb-1">Feedback</h4>
+            <p className="text-sm text-muted-foreground">{feedback}</p>
+        </div>
+    </CardContent>
+  </Card>
+);
+
 export default function AnalysisDashboard({
   data,
   onDownloadPDF,
 }: AnalysisDashboardProps) {
-  const { metadata, evaluationCriteria, totalScore, overallAssessment } = data;
-
-  const groupedCriteria = evaluationCriteria.reduce((acc, criterion) => {
-    const category = criterion.category;
-    if (!acc[category]) {
-      acc[category] = [];
-    }
-    acc[category].push(criterion);
-    return acc;
-  }, {} as Record<string, typeof evaluationCriteria>);
+  const { metadata, evaluationCriteria, totalScore, overallAssessment, highlightedTranscription } = data;
 
   return (
-    <div className="w-full space-y-6">
-      <Card>
+    <div className="w-full space-y-8">
+      <Card className="shadow-lg">
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
@@ -77,80 +96,47 @@ export default function AnalysisDashboard({
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <MetricCard title="Word Count" value={metadata.wordCount} />
-        <MetricCard title="Filler Words" value={metadata.fillerWordCount} />
-        <MetricCard title="Speech Rate (WPM)" value={metadata.speechRateWPM} />
-        <MetricCard
-          title="Pitch Variance"
-          value={`${metadata.pitchVariance.toFixed(2)}`}
-        />
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="font-headline text-2xl">
-            Detailed Feedback
-          </CardTitle>
-          <CardDescription>
-            Breakdown of your performance across different categories.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Accordion
-            type="single"
-            collapsible
-            className="w-full"
-            defaultValue={Object.keys(groupedCriteria)[0]}
-          >
-            {Object.entries(groupedCriteria).map(([category, criteria]) => (
-              <AccordionItem value={category} key={category}>
-                <AccordionTrigger className="text-lg font-semibold font-headline">
-                  {category}
-                </AccordionTrigger>
-                <AccordionContent>
-                  <div className="space-y-6">
-                    {criteria.map((item, index) => (
-                      <div key={index}>
-                        <div className="mb-1 flex items-center justify-between">
-                          <h4 className="font-medium">{item.criteria}</h4>
-                          <span className="text-sm font-bold text-primary">
-                            {item.score}/10
-                          </span>
-                        </div>
-                        <Progress value={item.score * 10} className="h-2" />
-                        <p className="mt-2 text-sm text-muted-foreground">
-                          <strong className="text-foreground">
-                            Evaluation:
-                          </strong>{" "}
-                          {item.evaluation}
-                        </p>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          <strong className="text-foreground">
-                            Feedback:
-                          </strong>{" "}
-                          {item.feedback}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-        </CardContent>
-      </Card>
-      
-      {metadata.fullTranscription && (
-         <Card>
+      {highlightedTranscription && (
+         <Card className="shadow-lg">
             <CardHeader>
                 <CardTitle className="font-headline text-2xl">Full Transcription</CardTitle>
+                <CardDescription>Filler words and long pauses are highlighted in red.</CardDescription>
             </CardHeader>
             <CardContent>
-                <Textarea readOnly value={metadata.fullTranscription} className="h-48 bg-muted/50" />
+                <TranscriptionDisplay segments={highlightedTranscription} />
             </CardContent>
          </Card>
       )}
+
+      <div className="space-y-4">
+        <h2 className="font-headline text-2xl font-semibold">Key Metrics</h2>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <MetricCard title="Word Count" value={metadata.wordCount} />
+            <MetricCard title="Filler Words" value={metadata.fillerWordCount} />
+            <MetricCard title="Speech Rate (WPM)" value={metadata.speechRateWPM} />
+            <MetricCard
+              title="Pitch Variance"
+              value={`${metadata.pitchVariance.toFixed(2)}`}
+            />
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <h2 className="font-headline text-2xl font-semibold">
+            Detailed Feedback
+        </h2>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {evaluationCriteria.map((item, index) => (
+                <EvaluationCard 
+                    key={index}
+                    criterion={item.criteria}
+                    score={item.score}
+                    evaluation={item.evaluation}
+                    feedback={item.feedback}
+                />
+            ))}
+        </div>
+      </div>
     </div>
   );
 }

@@ -11,6 +11,29 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
+const evaluationCriteriaEnum = z.enum([
+  "Speech Fluency and Delivery",
+  "Pronunciation and Clarity",
+  "Grammar and Language Accuracy",
+  "Vocabulary and Word Choice",
+  "Content Relevance and Focus",
+  "Coverage of Key Points",
+  "Accuracy of Facts and Explanations",
+  "Organization and Coherence",
+  "Confidence or Self-Assurance",
+  "Use of Examples or Evidence",
+  "Depth of Understanding (Analytical Depth)",
+  "Originality or Plagiarism Detection",
+  "Uncertainty or Doubt Indicators",
+  "Emotional Tone or Sentiment",
+  "Length and Time Management"
+]);
+
+const HighlightedSegmentSchema = z.object({
+  text: z.string(),
+  type: z.enum(['default', 'filler', 'pause']),
+});
+
 const AnalyzeSpeechInputSchema = z.object({
   speechSample: z.string().describe('The speech sample to analyze, either transcription or an audio data URI.'),
   mode: z.enum(['Presentation Mode', 'Interview Mode', 'Practice Mode']).describe('The context for the analysis.'),
@@ -28,17 +51,16 @@ const AnalyzeSpeechOutputSchema = z.object({
     averagePauseDurationMs: z.number().describe('The average pause duration in milliseconds.'),
     pitchVariance: z.number().describe('The variance in pitch during the speech sample.'),
     audioDurationSeconds: z.number().optional().describe('The duration of the audio in seconds, if audio was provided.'),
-    fullTranscription: z.string().optional().describe('The full transcription of the audio, if audio was provided.'),
   }),
+  highlightedTranscription: z.array(HighlightedSegmentSchema).optional().describe('The full transcription, segmented for highlighting filler words and pauses.'),
   evaluationCriteria: z.array(
     z.object({
-      category: z.enum(['Delivery', 'Language', 'Content']).describe('The category of the evaluation criteria.'),
-      criteria: z.string().describe('The specific evaluation criteria.'),
+      criteria: evaluationCriteriaEnum.describe('The specific evaluation criteria.'),
       score: z.number().min(0).max(10).describe('The score for the criteria (0-10).'),
       evaluation: z.string().describe('A brief evaluation of the speech sample against the criteria.'),
       feedback: z.string().describe('Actionable feedback to improve the criteria.'),
     })
-  ).describe('Detailed evaluation criteria.'),
+  ).describe('Detailed evaluation of the 15 specified criteria.'),
   totalScore: z.number().min(0).max(100).describe('An overall assessment that summarizes performance across all criteria (0-100).'),
   overallAssessment: z.string().describe('An overall assessment of the speech'),
 });
@@ -64,14 +86,16 @@ Context: {{{mode}}}
 
 Return a structured JSON object with the following schema:
 ${AnalyzeSpeechOutputSchema.description}\n\nFollow these instructions when generating the JSON:
--The score is from 0 to 10, evaluate various dimensions of the speech sample and context.
--The totalScore is from 0 to 100, and evaluate the speech sample and context as a whole.
--The speechRateWPM should be a number calculated from the speechSample.
--The wordCount should be the number of words from the speechSample.
--The fillerWordCount should be the number of filler words from the speechSample. Filler words include: like, um, uh, so, you know, actually, basically, I mean, okay, right.
--The averagePauseDurationMs should be a number calculated from the speechSample.
--The pitchVariance should be a number calculated from the speechSample.
--If the speechSample is an audio data URI, the fullTranscription should the transcription of the speechSample. And the audioDurationSeconds should be a number calculated from the audio data URI.
+- Evaluate the speech sample on ALL 15 of the following criteria: ${evaluationCriteriaEnum.options.join(', ')}.
+- For each criterion, provide a score from 0-10, a brief evaluation, and actionable feedback.
+- The totalScore is from 0 to 100, and evaluate the speech sample and context as a whole.
+- The speechRateWPM should be a number calculated from the speechSample.
+- The wordCount should be the number of words from the speechSample.
+- The fillerWordCount should be the number of filler words from the speechSample. Filler words include: like, um, uh, so, you know, actually, basically, I mean, okay, right.
+- The averagePauseDurationMs should be a number calculated from the speechSample.
+- The pitchVariance should be a number calculated from the speechSample.
+- If the speechSample is an audio data URI, the audioDurationSeconds should be a number calculated from the audio data URI.
+- The highlightedTranscription should be an array of objects. Segment the transcription into parts. For each part, specify if its type is 'default', 'filler' (for filler words like 'um', 'ah', 'like'), or 'pause' (for significant silences). The text for a pause should represent the pause, e.g., '[PAUSE: 1.2s]'. Concatenating all 'text' fields should reconstruct the full transcription with pause annotations.
 `,
 });
 
