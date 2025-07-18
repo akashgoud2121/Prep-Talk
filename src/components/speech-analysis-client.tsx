@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Loader2, Mic, Upload, X } from "lucide-react";
+import { Loader2, Mic, Upload, X, Signal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -258,9 +258,9 @@ export default function SpeechAnalysisClient() {
             <CardContent className="p-4">
               <Tabs value={currentTab} onValueChange={(v) => { clearAudio(); setTranscript(""); setCurrentTab(v); }} className="w-full">
                 <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="live">Live Transcription</TabsTrigger>
-                  <TabsTrigger value="record">Record Audio</TabsTrigger>
-                  <TabsTrigger value="upload">Upload File</TabsTrigger>
+                  <TabsTrigger value="live"><Signal className="mr-2" />Live Transcription</TabsTrigger>
+                  <TabsTrigger value="record"><Mic className="mr-2" />Record Audio</TabsTrigger>
+                  <TabsTrigger value="upload"><Upload className="mr-2" />Upload File</TabsTrigger>
                 </TabsList>
                 <TabsContent value="live" className="mt-4">
                    <Textarea
