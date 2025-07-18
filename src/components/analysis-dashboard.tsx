@@ -13,6 +13,8 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Download, Star, FileText, FilterX, Zap, PauseCircle, TrendingUp, Rabbit, MicVocal, Hourglass, BrainCircuit, Speech, BookOpen } from "lucide-react";
 import TranscriptionDisplay from "./transcription-display";
+import { cn } from "@/lib/utils";
+
 
 interface AnalysisDashboardProps {
   data: AnalyzeSpeechOutput;
@@ -24,21 +26,25 @@ const MetricCard = ({
   value,
   unit,
   icon: Icon,
+  color,
 }: {
   title: string;
   value: string | number;
   unit?: string;
   icon: React.ElementType;
+  color: string;
 }) => (
-    <Card className="relative overflow-hidden bg-card/50 shadow-md transition-transform hover:scale-105 hover:shadow-lg">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-        <Icon className="h-4 w-4 text-muted-foreground" />
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">
-          {value}
-          {unit && <span className="text-xs font-normal text-muted-foreground ml-1">{unit}</span>}
+    <Card className="relative overflow-hidden bg-card/50 shadow-sm transition-transform hover:scale-105 hover:shadow-lg">
+      <CardContent className="p-4 flex items-center gap-4">
+        <div className={cn("flex-shrink-0 h-12 w-12 rounded-lg flex items-center justify-center", color)}>
+           <Icon className="h-6 w-6 text-white" />
+        </div>
+        <div className="flex-grow">
+          <p className="text-sm font-medium text-muted-foreground">{title}</p>
+          <p className="text-2xl font-bold">
+            {value}
+            {unit && <span className="text-xs font-normal text-muted-foreground ml-1">{unit}</span>}
+          </p>
         </div>
       </CardContent>
     </Card>
@@ -56,23 +62,23 @@ const EvaluationCard = ({
   evaluation: string;
   feedback: string;
 }) => (
-  <Card className="flex flex-col bg-card/50 shadow-md transition-transform hover:scale-105 hover:shadow-lg">
-    <CardHeader className="pb-4">
-      <div className="flex items-start justify-between">
-        <CardTitle className="font-headline text-lg leading-tight pr-2">{criterion}</CardTitle>
-        <div className="flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-full bg-primary/10 border-2 border-primary text-primary font-bold text-sm">
-          {score}/10
+  <Card className="flex flex-col bg-card/50 shadow-sm transition-transform hover:scale-105 hover:shadow-lg w-full">
+    <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+            <CardTitle className="font-headline text-md leading-tight">{criterion}</CardTitle>
+            <div className="flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-full bg-primary/10 border-2 border-primary text-primary font-bold text-sm">
+                {score}/10
+            </div>
         </div>
-      </div>
     </CardHeader>
     <CardContent className="flex-grow space-y-3">
         <div>
-            <h4 className="font-semibold text-sm mb-1">Evaluation</h4>
-            <p className="text-sm text-muted-foreground">{evaluation}</p>
+            <h4 className="font-semibold text-xs uppercase text-muted-foreground tracking-wider mb-1">Evaluation</h4>
+            <p className="text-sm text-foreground/80">{evaluation}</p>
         </div>
          <div>
-            <h4 className="font-semibold text-sm mb-1">Feedback</h4>
-            <p className="text-sm text-muted-foreground">{feedback}</p>
+            <h4 className="font-semibold text-xs uppercase text-muted-foreground tracking-wider mb-1">Feedback</h4>
+            <p className="text-sm text-foreground/80">{feedback}</p>
         </div>
     </CardContent>
   </Card>
@@ -84,16 +90,17 @@ const categoryIcons: Record<string, React.ElementType> = {
     "Content": BrainCircuit,
 };
 
-const metricIcons: Record<string, React.ElementType> = {
-    "Word Count": FileText,
-    "Filler Words": FilterX,
-    "Speech Rate": Zap,
-    "Avg. Pause": PauseCircle,
-    "Pitch Variance": TrendingUp,
-    "Pace Score": Rabbit,
-    "Clarity Score": MicVocal,
-    "Pause Time": Hourglass,
+const metricIcons: Record<string, { icon: React.ElementType, color: string }> = {
+    "Word Count": { icon: FileText, color: "bg-blue-500" },
+    "Filler Words": { icon: FilterX, color: "bg-red-500" },
+    "Speech Rate": { icon: Zap, color: "bg-yellow-500" },
+    "Avg. Pause": { icon: PauseCircle, color: "bg-indigo-500" },
+    "Pitch Variance": { icon: TrendingUp, color: "bg-green-500" },
+    "Pace Score": { icon: Rabbit, color: "bg-orange-500" },
+    "Clarity Score": { icon: MicVocal, color: "bg-sky-500" },
+    "Pause Time": { icon: Hourglass, color: "bg-purple-500" },
 };
+
 
 export default function AnalysisDashboard({
   data,
@@ -146,14 +153,14 @@ export default function AnalysisDashboard({
       <div className="space-y-4">
         <h2 className="font-headline text-2xl font-semibold">Key Metrics</h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <MetricCard title="Word Count" value={metadata.wordCount} icon={metricIcons["Word Count"]} />
-            <MetricCard title="Filler Words" value={metadata.fillerWordCount} icon={metricIcons["Filler Words"]} />
-            <MetricCard title="Speech Rate" value={metadata.speechRateWPM} unit="WPM" icon={metricIcons["Speech Rate"]} />
-            <MetricCard title="Avg. Pause" value={metadata.averagePauseDurationMs} unit="ms" icon={metricIcons["Avg. Pause"]} />
-            <MetricCard title="Pitch Variance" value={metadata.pitchVariance.toFixed(2)} icon={metricIcons["Pitch Variance"]} />
-            <MetricCard title="Pace Score" value={metadata.paceScore} unit="/ 100" icon={metricIcons["Pace Score"]} />
-            <MetricCard title="Clarity Score" value={metadata.clarityScore} unit="/ 100" icon={metricIcons["Clarity Score"]} />
-            <MetricCard title="Pause Time" value={metadata.pausePercentage.toFixed(1)} unit="%" icon={metricIcons["Pause Time"]} />
+            <MetricCard title="Word Count" value={metadata.wordCount} icon={metricIcons["Word Count"].icon} color={metricIcons["Word Count"].color} />
+            <MetricCard title="Filler Words" value={metadata.fillerWordCount} icon={metricIcons["Filler Words"].icon} color={metricIcons["Filler Words"].color} />
+            <MetricCard title="Speech Rate" value={metadata.speechRateWPM} unit="WPM" icon={metricIcons["Speech Rate"].icon} color={metricIcons["Speech Rate"].color} />
+            <MetricCard title="Avg. Pause" value={metadata.averagePauseDurationMs} unit="ms" icon={metricIcons["Avg. Pause"].icon} color={metricIcons["Avg. Pause"].color} />
+            <MetricCard title="Pitch Variance" value={metadata.pitchVariance.toFixed(2)} icon={metricIcons["Pitch Variance"].icon} color={metricIcons["Pitch Variance"].color} />
+            <MetricCard title="Pace Score" value={metadata.paceScore} unit="/ 100" icon={metricIcons["Pace Score"].icon} color={metricIcons["Pace Score"].color} />
+            <MetricCard title="Clarity Score" value={metadata.clarityScore} unit="/ 100" icon={metricIcons["Clarity Score"].icon} color={metricIcons["Clarity Score"].color} />
+            <MetricCard title="Pause Time" value={metadata.pausePercentage.toFixed(1)} unit="%" icon={metricIcons["Pause Time"].icon} color={metricIcons["Pause Time"].color} />
         </div>
       </div>
       
