@@ -266,7 +266,7 @@ export default function SpeechAnalysisClient() {
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-lg flex-shrink-0 mt-1">1</div>
             <div className="w-full">
                 <h2 className="text-2xl font-headline font-semibold mb-4">Provide Your Speech</h2>
-                 <Card className="rounded-lg border shadow-lg bg-card/50 transition-transform hover:scale-[1.02]">
+                 <Card className="rounded-lg border shadow-lg bg-card/50">
                     <Tabs value={currentTab} onValueChange={(v) => { clearAudio(); setTranscript(""); setCurrentTab(v); }} className="w-full">
                         <CardHeader className="p-4 border-b">
                             <TabsList className="grid w-full grid-cols-3">
@@ -363,51 +363,55 @@ export default function SpeechAnalysisClient() {
                  <RadioGroup
                     value={mode}
                     onValueChange={(v: any) => setMode(v)}
-                    className="space-y-4"
+                    className="grid grid-cols-1 gap-4"
                  >
                     {modeOptions.map(option => {
                         const isSelected = mode === option.value;
                         return (
                              <Label key={option.value} htmlFor={option.value} className={cn(
-                                "block rounded-lg border-2 p-6 cursor-pointer transition-all duration-300",
-                                isSelected ? "border-primary shadow-lg" : "border-border bg-card/50 hover:border-primary/50"
+                                "block rounded-lg border-2 p-4 cursor-pointer transition-all duration-200",
+                                isSelected ? "border-primary bg-primary/5 shadow-lg" : "border-border bg-card/50 hover:border-primary/50"
                              )}>
-                                <RadioGroupItem value={option.value} id={option.value} className="sr-only" />
-                                <div className="flex items-start gap-6">
-                                    <div className={cn("flex h-12 w-12 items-center justify-center rounded-full flex-shrink-0 mt-1", isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
+                                <div className="flex items-center gap-4">
+                                    <RadioGroupItem value={option.value} id={option.value} className="h-5 w-5" />
+                                    <div className={cn("flex h-10 w-10 items-center justify-center rounded-lg flex-shrink-0", isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
                                         <option.icon />
                                     </div>
                                     <div className="w-full">
-                                        <h3 className="font-headline text-lg font-semibold mb-1">{option.title}</h3>
-                                        <p className="text-muted-foreground text-sm mb-4">{option.description}</p>
-                                        <div className={cn("overflow-hidden transition-all duration-500 ease-in-out", isSelected ? "max-h-96" : "max-h-0")}>
-                                             {(option.value === "Interview Mode" || option.value === "Practice Mode") && (
-                                                <Textarea
-                                                id="question"
-                                                value={question}
-                                                onClick={(e) => e.preventDefault()}
-                                                onChange={(e) => setQuestion(e.target.value)}
-                                                placeholder="Enter the interview question here..."
-                                                className="bg-background mt-2"
-                                                />
-                                            )}
-                                            {option.value === "Practice Mode" && (
-                                                <Textarea
-                                                id="perfect-answer"
-                                                value={perfectAnswer}
-                                                onClick={(e) => e.preventDefault()}
-                                                onChange={(e) => setPerfectAnswer(e.target.value)}
-                                                placeholder="Provide an ideal or 'perfect' answer for comparison."
-                                                className="bg-background mt-4"
-                                                />
-                                            )}
-                                        </div>
+                                        <h3 className="font-headline text-md font-semibold mb-1">{option.title}</h3>
+                                        <p className="text-muted-foreground text-sm">{option.description}</p>
                                     </div>
                                 </div>
                              </Label>
                         )
                     })}
                  </RadioGroup>
+                 <div className="mt-6 space-y-4">
+                    {(mode === "Interview Mode" || mode === "Practice Mode") && (
+                        <div className="space-y-2">
+                            <Label htmlFor="question" className="font-semibold">Interview Question</Label>
+                            <Textarea
+                                id="question"
+                                value={question}
+                                onChange={(e) => setQuestion(e.target.value)}
+                                placeholder="Enter the interview question here..."
+                                className="bg-background"
+                            />
+                        </div>
+                    )}
+                    {mode === "Practice Mode" && (
+                         <div className="space-y-2">
+                            <Label htmlFor="perfect-answer" className="font-semibold">Your Perfect Answer</Label>
+                            <Textarea
+                                id="perfect-answer"
+                                value={perfectAnswer}
+                                onChange={(e) => setPerfectAnswer(e.target.value)}
+                                placeholder="Provide an ideal or 'perfect' answer for comparison."
+                                className="bg-background"
+                            />
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
       </div>
@@ -445,3 +449,4 @@ export default function SpeechAnalysisClient() {
     </div>
   );
 }
+
