@@ -12,21 +12,24 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const evaluationCriteriaEnum = z.enum([
-  "Speech Fluency and Delivery",
-  "Pronunciation and Clarity",
-  "Grammar and Language Accuracy",
-  "Vocabulary and Word Choice",
-  "Content Relevance and Focus",
-  "Coverage of Key Points",
-  "Accuracy of Facts and Explanations",
-  "Organization and Coherence",
-  "Confidence or Self-Assurance",
-  "Use of Examples or Evidence",
-  "Depth of Understanding (Analytical Depth)",
-  "Originality or Plagiarism Detection",
-  "Uncertainty or Doubt Indicators",
-  "Emotional Tone or Sentiment",
-  "Length and Time Management"
+  // Delivery
+  "Fluency",
+  "Pacing",
+  "Clarity",
+  "Confidence",
+  "Emotional Tone",
+  // Language
+  "Grammar",
+  "Vocabulary",
+  "Word Choice",
+  "Conciseness",
+  "Filler Words",
+  // Content
+  "Relevance",
+  "Organization",
+  "Accuracy",
+  "Depth",
+  "Persuasiveness",
 ]);
 
 const evaluationCategoryEnum = z.enum([
@@ -98,8 +101,11 @@ Context: {{{mode}}}
 
 Return a structured JSON object with the following schema:
 ${AnalyzeSpeechOutputSchema.description}\n\nFollow these instructions when generating the JSON:
-- Evaluate the speech sample on ALL 15 of the following criteria: ${evaluationCriteriaEnum.options.join(', ')}.
-- For each criterion, provide a score from 0-10, a brief evaluation, actionable feedback, and a category ('Delivery', 'Language', or 'Content').
+- Evaluate the speech sample on ALL 15 of the following criteria.
+- **Delivery Criteria**: Fluency, Pacing, Clarity, Confidence, Emotional Tone. Assign the category 'Delivery' to these.
+- **Language Criteria**: Grammar, Vocabulary, Word Choice, Conciseness, Filler Words. Assign the category 'Language' to these.
+- **Content Criteria**: Relevance, Organization, Accuracy, Depth, Persuasiveness. Assign the category 'Content' to these.
+- For each of the 15 criteria, provide a score from 0-10, a brief evaluation, and actionable feedback.
 - The totalScore is from 0 to 100, and evaluate the speech sample and context as a whole.
 - The speechRateWPM should be a number calculated from the transcription.
 - The wordCount should be the number of words from the transcription.

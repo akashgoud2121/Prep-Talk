@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Download, Star, FileText, FilterX, Zap, PauseCircle, TrendingUp, Rabbit, MicVocal, Hourglass, BrainCircuit, Speech, BookOpen } from "lucide-react";
+import { Download, Star, FileText, FilterX, Zap, PauseCircle, TrendingUp, Rabbit, MicVocal, Hourglass, BrainCircuit, Speech, BookOpen, Smile, Award, Wind, Target, Scale, Brain, Crosshair } from "lucide-react";
 import TranscriptionDisplay from "./transcription-display";
 
 interface AnalysisDashboardProps {
@@ -30,20 +30,21 @@ const MetricCard = ({
   unit?: string;
   icon: React.ElementType;
 }) => (
-  <Card className="bg-secondary/30">
-    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-      <CardTitle className="text-sm font-medium">{title}</CardTitle>
-      <Icon className="h-4 w-4 text-muted-foreground" />
-    </CardHeader>
-    <CardContent>
-      <div className="text-2xl font-bold">
-        {value}
-        {unit && <span className="text-xs font-normal text-muted-foreground ml-1">{unit}</span>}
-      </div>
-    </CardContent>
+  <Card className="bg-card/50 shadow-md transition-transform hover:scale-105 hover:shadow-lg">
+    <div className="flex">
+        <div className="flex items-center justify-center p-4 bg-primary/10 rounded-l-lg">
+            <Icon className="h-8 w-8 text-primary" />
+        </div>
+        <div className="p-4 flex flex-col justify-center">
+            <p className="text-sm font-medium text-muted-foreground">{title}</p>
+            <p className="text-2xl font-bold text-foreground">
+                {value}
+                {unit && <span className="text-xs font-normal text-muted-foreground ml-1">{unit}</span>}
+            </p>
+        </div>
+    </div>
   </Card>
 );
-
 
 const EvaluationCard = ({
   criterion,
@@ -56,7 +57,7 @@ const EvaluationCard = ({
   evaluation: string;
   feedback: string;
 }) => (
-  <Card className="flex flex-col">
+  <Card className="flex flex-col bg-card/50 shadow-md">
     <CardHeader className="pb-4">
       <div className="flex items-start justify-between">
         <CardTitle className="font-headline text-lg leading-tight">{criterion}</CardTitle>
@@ -85,6 +86,16 @@ const categoryIcons: Record<string, React.ElementType> = {
     "Content": BrainCircuit,
 };
 
+const metricIcons: Record<string, React.ElementType> = {
+    "Word Count": FileText,
+    "Filler Words": FilterX,
+    "Speech Rate": Zap,
+    "Avg. Pause": PauseCircle,
+    "Pitch Variance": TrendingUp,
+    "Pace Score": Rabbit,
+    "Clarity Score": MicVocal,
+    "Pause Time": Hourglass,
+};
 
 export default function AnalysisDashboard({
   data,
@@ -126,7 +137,7 @@ export default function AnalysisDashboard({
          <Card className="shadow-lg">
             <CardHeader>
                 <CardTitle className="font-headline text-2xl">Full Transcription</CardTitle>
-                <CardDescription>Filler words and long pauses are highlighted in red.</CardDescription>
+                <CardDescription>Filler words and long pauses are highlighted.</CardDescription>
             </CardHeader>
             <CardContent>
                 <TranscriptionDisplay segments={highlightedTranscription} />
@@ -137,14 +148,14 @@ export default function AnalysisDashboard({
       <div className="space-y-4">
         <h2 className="font-headline text-2xl font-semibold">Key Metrics</h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <MetricCard title="Word Count" value={metadata.wordCount} icon={FileText} />
-            <MetricCard title="Filler Words" value={metadata.fillerWordCount} icon={FilterX} />
-            <MetricCard title="Speech Rate" value={metadata.speechRateWPM} unit="WPM" icon={Zap} />
-            <MetricCard title="Avg. Pause" value={metadata.averagePauseDurationMs} unit="ms" icon={PauseCircle} />
-            <MetricCard title="Pitch Variance" value={metadata.pitchVariance.toFixed(2)} icon={TrendingUp} />
-            <MetricCard title="Pace Score" value={metadata.paceScore} unit="/ 100" icon={Rabbit} />
-            <MetricCard title="Clarity Score" value={metadata.clarityScore} unit="/ 100" icon={MicVocal} />
-            <MetricCard title="Pause Time" value={metadata.pausePercentage.toFixed(1)} unit="%" icon={Hourglass} />
+            <MetricCard title="Word Count" value={metadata.wordCount} icon={metricIcons["Word Count"]} />
+            <MetricCard title="Filler Words" value={metadata.fillerWordCount} icon={metricIcons["Filler Words"]} />
+            <MetricCard title="Speech Rate" value={metadata.speechRateWPM} unit="WPM" icon={metricIcons["Speech Rate"]} />
+            <MetricCard title="Avg. Pause" value={metadata.averagePauseDurationMs} unit="ms" icon={metricIcons["Avg. Pause"]} />
+            <MetricCard title="Pitch Variance" value={metadata.pitchVariance.toFixed(2)} icon={metricIcons["Pitch Variance"]} />
+            <MetricCard title="Pace Score" value={metadata.paceScore} unit="/ 100" icon={metricIcons["Pace Score"]} />
+            <MetricCard title="Clarity Score" value={metadata.clarityScore} unit="/ 100" icon={metricIcons["Clarity Score"]} />
+            <MetricCard title="Pause Time" value={metadata.pausePercentage.toFixed(1)} unit="%" icon={metricIcons["Pause Time"]} />
         </div>
       </div>
       
@@ -153,12 +164,12 @@ export default function AnalysisDashboard({
         {Object.entries(groupedCriteria).map(([category, items]) => {
           const CategoryIcon = categoryIcons[category] || Star;
           return (
-            <div key={category} className="space-y-4">
+            <div key={category} className="space-y-4 rounded-lg border border-border p-6 shadow-md bg-card/20">
               <div className="flex items-center gap-3">
                  <CategoryIcon className="h-6 w-6 text-primary" />
                  <h3 className="font-headline text-xl font-semibold">{category}</h3>
               </div>
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                 {items.map((item, index) => (
                   <EvaluationCard
                     key={index}
