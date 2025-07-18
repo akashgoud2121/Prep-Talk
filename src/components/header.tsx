@@ -3,18 +3,14 @@ import { ThemeToggle } from "@/components/theme-toggle";
 export default function Header() {
   return (
     <div className="w-full max-w-7xl text-center mb-12">
-      <div className="flex items-center justify-center w-full relative">
-        <h1 className="text-4xl md:text-5xl font-bold font-headline flex items-center gap-3">
-          <span>🎙️</span>
-          <span className="text-primary">Speech</span> <span className="text-primary">Analysis Assistant</span>
+       <div className="flex justify-center items-center gap-4 mb-2">
+        <h1 className="font-headline text-4xl md:text-5xl font-bold text-primary">
+          🎙️ Speech Analysis Assistant
         </h1>
-        <div className="absolute right-0">
-         <ThemeToggle />
-        </div>
+        <ThemeToggle />
       </div>
-      <p className="mt-4 text-lg text-foreground/80 max-w-3xl mx-auto">
-        Upload your speech, get instant AI-powered feedback, and improve your
-        public speaking skills.
+      <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+        Record or transcribe your speech to get AI-powered feedback on your delivery, language, and content.
       </p>
     </div>
   );
