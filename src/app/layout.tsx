@@ -3,7 +3,6 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
 import { Inter, Space_Grotesk } from "next/font/google";
-import { ThemeToggle } from "@/components/theme-toggle";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -31,13 +30,10 @@ export default function RootLayout({
       <body className={`${inter.variable} ${spaceGrotesk.variable} font-body antialiased`}>
         <ThemeProvider
           attribute="class"
-          defaultTheme="light"
+          defaultTheme="dark"
           enableSystem
           disableTransitionOnChange
         >
-          <div className="absolute top-4 right-4 z-50">
-           <ThemeToggle />
-          </div>
           {children}
           <Toaster />
         </ThemeProvider>
