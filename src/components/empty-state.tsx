@@ -1,6 +1,7 @@
 export default function EmptyState() {
   return (
-    <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-card p-12 text-center">
+    <section className="space-y-6 pt-12 max-w-7xl mx-auto">
+      <div className="flex flex-col items-center justify-center rounded-lg h-full text-center bg-secondary p-8">
       <svg
         xmlns="http://www.w3.org/2000/svg"
         width="24"
@@ -27,13 +28,13 @@ export default function EmptyState() {
         <circle cx="20" cy="21" r=".5"></circle>
         <circle cx="20" cy="8" r=".5"></circle>
       </svg>
-      <h3 className="mt-4 text-xl font-semibold font-headline">
-        Awaiting Your Analysis
-      </h3>
-      <p className="mt-2 text-sm text-muted-foreground">
-        Provide your speech input, set the context, then click "Analyze My
-        Speech" to see your results.
-      </p>
-    </div>
+        <p className="text-lg font-medium">
+          Your analysis dashboard will appear here.
+        </p>
+        <p className="text-muted-foreground">
+          Record your speech and click "Analyze" to get started.
+        </p>
+      </div>
+    </section>
   );
 }
