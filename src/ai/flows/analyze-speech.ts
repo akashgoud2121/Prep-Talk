@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -35,7 +36,7 @@ const evaluationCriteriaEnum = z.enum([
 const evaluationCategoryEnum = z.enum([
     "Delivery",
     "Language",
-    "Content"
+"Content"
 ]);
 
 const HighlightedSegmentSchema = z.object({
@@ -109,14 +110,20 @@ ${AnalyzeSpeechOutputSchema.description}\n\nFollow these instructions when gener
 - The totalScore is from 0 to 100, and evaluate the speech sample and context as a whole.
 - The speechRateWPM should be a number calculated from the transcription.
 - The wordCount should be the number of words from the transcription.
-- The fillerWordCount should be the number of filler words from the transcription. Filler words include: like, um, uh, so, you know, actually, basically, I mean, okay, right.
+- The fillerWordCount should be the number of filler words from the transcription. Filler words include: like, um, uh, ah, so, you know, actually, basically, I mean, okay, right.
 - The averagePauseDurationMs should be a number estimated from the transcription.
 - The pitchVariance should be a number estimated from the transcription.
 - The paceScore should be a score from 0-100 based on the speechRateWPM. A rate between 140-160 WPM is ideal (100). The score should decrease as the rate moves away from this range.
 - The clarityScore should be a score from 0-100 based on an analysis of pronunciation, articulation, and mumbling in the transcription/audio.
 - The pausePercentage should be a number representing the estimated percentage of total time the speaker was pausing.
 - If the speechSample was an audio data URI, the audioDurationSeconds should be a number calculated from the audio data.
-- The highlightedTranscription must be an array of objects based on the full transcription. Segment the entire transcription into parts. For each part, specify if its type is 'default', 'filler' (for filler words like 'um', 'ah', 'like'), or 'pause' (for significant silences). The text for a pause should represent the pause, e.g., '[PAUSE: 1.2s]'. Concatenating all 'text' fields must reconstruct the full transcription with pause annotations. Do not leave this field empty.
+- **highlightedTranscription**: This is critical. You must meticulously segment the entire transcription.
+  - Create a segment for every single word or pause.
+  - For each segment, specify its type: 'default', 'filler', or 'pause'.
+  - A 'filler' type is ONLY for a single filler word from the list. If you see "um, like", that must be two separate segments, one for "um" and one for "like".
+  - A 'pause' type is for significant silences. The text for a pause should represent the pause, e.g., '[PAUSE: 1.2s]'.
+  - All other words are 'default'.
+  - Concatenating all 'text' fields MUST reconstruct the full transcription with pause annotations. Do not leave this field empty. Be extremely thorough.
 `,
 });
 
