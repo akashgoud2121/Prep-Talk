@@ -28,7 +28,7 @@ export default function EmptyState() {
         <circle cx="20" cy="21" r=".5"></circle>
         <circle cx="20" cy="8" r=".5"></circle>
       </svg>
-        <p className="text-lg font-medium">
+        <p className="text-2xl font-medium">
           Your analysis dashboard will appear here.
         </p>
         <p className="text-muted-foreground">
