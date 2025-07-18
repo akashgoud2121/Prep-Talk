@@ -51,8 +51,6 @@ export const generatePdfReport = (data: AnalyzeSpeechOutput): void => {
 
   if (highlightedTranscription && highlightedTranscription.length > 0) {
     checkY(line_height * 3);
-    doc.addPage();
-    y = margin;
     doc.setFont("helvetica", "bold");
     doc.setFontSize(16);
     doc.text("Full Transcription", margin, y);
@@ -71,7 +69,7 @@ export const generatePdfReport = (data: AnalyzeSpeechOutput): void => {
     y += transcriptionLines.length * line_height + line_height;
   }
   
-  checkY(line_height);
+  checkY(line_height * 2);
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
@@ -99,9 +97,9 @@ export const generatePdfReport = (data: AnalyzeSpeechOutput): void => {
   }
 
   metrics.forEach((metric) => {
+    checkY();
     doc.text(metric, margin, y);
     y += line_height;
-    checkY();
   });
   y += line_height;
 
@@ -111,7 +109,8 @@ export const generatePdfReport = (data: AnalyzeSpeechOutput): void => {
     acc[category].push(criterion);
     return acc;
   }, {} as Record<string, typeof evaluationCriteria>);
-
+  
+  checkY(line_height * 2);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
   doc.text("Detailed Feedback", margin, y);
@@ -140,6 +139,7 @@ export const generatePdfReport = (data: AnalyzeSpeechOutput): void => {
         `Evaluation: ${item.evaluation}`,
         pageWidth - margin * 2 - 5
       );
+      checkY(evalLines.length * line_height);
       doc.text(evalLines, margin + 5, y);
       y += evalLines.length * line_height;
 
@@ -147,6 +147,7 @@ export const generatePdfReport = (data: AnalyzeSpeechOutput): void => {
         `Feedback: ${item.feedback}`,
         pageWidth - margin * 2 - 5
       );
+      checkY(feedbackLines.length * line_height);
       doc.text(feedbackLines, margin + 5, y);
       y += feedbackLines.length * line_height + line_height / 2;
     });

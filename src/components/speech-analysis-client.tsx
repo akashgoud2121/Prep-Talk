@@ -14,7 +14,7 @@ import {
 import AnalysisDashboard from "@/components/analysis-dashboard";
 import EmptyState from "@/components/empty-state";
 import { generatePdfReport } from "@/lib/pdf";
-import { cn, encodeWAV } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -63,12 +63,8 @@ export default function SpeechAnalysisClient() {
 
   const recognitionRef = useRef<CustomSpeechRecognition | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Refs for WAV recording
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const mediaStreamRef = useRef<MediaStream | null>(null);
-  const scriptProcessorRef = useRef<ScriptProcessorNode | null>(null);
-  const audioBuffersRef = useRef<Float32Array[]>([]);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -121,27 +117,22 @@ export default function SpeechAnalysisClient() {
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaStreamRef.current = stream;
+      mediaRecorderRef.current = new MediaRecorder(stream);
+      audioChunksRef.current = [];
 
-      const context = new (window.AudioContext || window.webkitAudioContext)();
-      audioContextRef.current = context;
-
-      const source = context.createMediaStreamSource(stream);
-      const processor = context.createScriptProcessor(4096, 1, 1);
-      scriptProcessorRef.current = processor;
-
-      audioBuffersRef.current = [];
-
-      processor.onaudioprocess = (e) => {
-        // This check is now crucial
-        if (!isRecording) return;
-        const inputData = e.inputBuffer.getChannelData(0);
-        audioBuffersRef.current.push(new Float32Array(inputData));
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        audioChunksRef.current.push(event.data);
       };
 
-      source.connect(processor);
-      processor.connect(context.destination);
+      mediaRecorderRef.current.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        const url = URL.createObjectURL(audioBlob);
+        setAudioBlob(audioBlob);
+        setAudioURL(url);
+        stream.getTracks().forEach(track => track.stop());
+      };
 
+      mediaRecorderRef.current.start();
       setIsRecording(true);
     } catch (error) {
       console.error("Microphone access denied:", error);
@@ -154,40 +145,11 @@ export default function SpeechAnalysisClient() {
   };
 
   const stopRecording = () => {
-    // This check prevents the function from running multiple times
-    if (!isRecording) return;
-    setIsRecording(false);
-    
-    // Stop all media tracks
-    if (mediaStreamRef.current) {
-      mediaStreamRef.current.getTracks().forEach(track => track.stop());
-      mediaStreamRef.current = null;
-    }
-
-    // Disconnect the processor
-    if (scriptProcessorRef.current) {
-        scriptProcessorRef.current.disconnect();
-        scriptProcessorRef.current = null;
-    }
-
-    // Close the audio context
-    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-        audioContextRef.current.close();
-    }
-
-    // Process the buffered audio
-    if (audioBuffersRef.current.length > 0 && audioContextRef.current) {
-        const sampleRate = audioContextRef.current.sampleRate;
-        const wavBlob = encodeWAV(audioBuffersRef.current, sampleRate);
-
-        setAudioBlob(wavBlob);
-        const url = URL.createObjectURL(wavBlob);
-        setAudioURL(url);
-        
-        audioBuffersRef.current = []; // Clear buffer after processing
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
     }
   };
-
 
   const handleToggleRecording = () => {
     if (isRecording) {
@@ -218,7 +180,7 @@ export default function SpeechAnalysisClient() {
     if (isRecording) {
       stopRecording();
     }
-    audioBuffersRef.current = [];
+    audioChunksRef.current = [];
   };
   
   const fileToDataUri = (file: Blob) =>
@@ -289,7 +251,7 @@ export default function SpeechAnalysisClient() {
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-lg flex-shrink-0 mt-1">1</div>
             <div className="w-full">
                 <h2 className="text-2xl font-headline font-semibold mb-4">Provide Your Speech</h2>
-                 <Card className="rounded-lg border shadow-lg bg-card/50 overflow-hidden">
+                 <Card className="rounded-lg border shadow-lg bg-card/50 overflow-hidden transition-transform hover:scale-[1.02]">
                     <Tabs value={currentTab} onValueChange={(v) => { clearAudio(); setTranscript(""); setCurrentTab(v); }} className="w-full">
                         <CardHeader className="p-4 border-b">
                             <TabsList className="grid w-full grid-cols-3">
@@ -383,7 +345,7 @@ export default function SpeechAnalysisClient() {
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-lg flex-shrink-0 mt-1">2</div>
             <div className="w-full">
                  <h2 className="text-2xl font-headline font-semibold mb-4">Set Analysis Context</h2>
-                 <Card className="rounded-lg border shadow-lg bg-card/50">
+                 <Card className="rounded-lg border shadow-lg bg-card/50 transition-transform hover:scale-[1.02]">
                     <CardContent className="p-6 space-y-6">
                         <RadioGroup
                           value={mode}

@@ -32,7 +32,7 @@ const MetricCard = ({
 }) => (
   <Card className="bg-card/50 shadow-md transition-transform hover:scale-105 hover:shadow-lg">
     <div className="flex">
-        <div className="flex items-center justify-center p-4 bg-primary/10 rounded-l-lg">
+        <div className="flex items-center justify-center p-6 bg-primary/10 rounded-l-lg">
             <Icon className="h-8 w-8 text-primary" />
         </div>
         <div className="p-4 flex flex-col justify-center">
@@ -60,10 +60,9 @@ const EvaluationCard = ({
   <Card className="flex flex-col bg-card/50 shadow-md transition-transform hover:scale-105 hover:shadow-lg">
     <CardHeader className="pb-4">
       <div className="flex items-start justify-between">
-        <CardTitle className="font-headline text-lg leading-tight">{criterion}</CardTitle>
-        <div className="flex items-center gap-1 text-primary font-bold">
-          <Star className="w-4 h-4 fill-primary" />
-          <span>{score}/10</span>
+        <CardTitle className="font-headline text-lg leading-tight pr-2">{criterion}</CardTitle>
+        <div className="flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-full bg-primary/10 border-2 border-primary text-primary font-bold text-sm">
+          {score}/10
         </div>
       </div>
     </CardHeader>
