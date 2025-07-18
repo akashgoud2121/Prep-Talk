@@ -30,20 +30,21 @@ const MetricCard = ({
   unit?: string;
   icon: React.ElementType;
 }) => (
-  <Card className="bg-card/50 shadow-md transition-transform hover:scale-105 hover:shadow-lg">
-    <div className="flex">
-        <div className="flex items-center justify-center p-6 bg-primary/10 rounded-l-lg">
-            <Icon className="h-8 w-8 text-primary" />
+    <Card className="relative overflow-hidden bg-card/50 shadow-md transition-transform hover:scale-105 hover:shadow-lg">
+      <div className="absolute top-0 left-0 h-1 w-full bg-primary/20">
+        <div className="h-full w-3/4 bg-primary"></div>
+      </div>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pt-4">
+        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
+        <Icon className="h-5 w-5 text-muted-foreground" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-3xl font-bold text-foreground">
+          {value}
+          {unit && <span className="text-sm font-normal text-muted-foreground ml-1">{unit}</span>}
         </div>
-        <div className="p-4 flex flex-col justify-center">
-            <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <p className="text-2xl font-bold text-foreground">
-                {value}
-                {unit && <span className="text-xs font-normal text-muted-foreground ml-1">{unit}</span>}
-            </p>
-        </div>
-    </div>
-  </Card>
+      </CardContent>
+    </Card>
 );
 
 const EvaluationCard = ({
