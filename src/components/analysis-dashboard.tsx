@@ -57,7 +57,7 @@ const EvaluationCard = ({
   evaluation: string;
   feedback: string;
 }) => (
-  <Card className="flex flex-col bg-card/50 shadow-md">
+  <Card className="flex flex-col bg-card/50 shadow-md transition-transform hover:scale-105 hover:shadow-lg">
     <CardHeader className="pb-4">
       <div className="flex items-start justify-between">
         <CardTitle className="font-headline text-lg leading-tight">{criterion}</CardTitle>
