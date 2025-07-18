@@ -29,20 +29,35 @@ interface CustomSpeechRecognition extends SpeechRecognition {
 }
 
 const PresentationIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-3 h-6 w-6"><path d="M2 3h20"></path><path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3"></path><path d="m7 21 5-5 5 5"></path></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-3 h-8 w-8"><path d="M2 3h20"></path><path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3"></path><path d="m7 21 5-5 5 5"></path></svg>
 );
 const InterviewIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-3 h-6 w-6"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><path d="M8 12a2 2 0 0 0 2-2V8H8"></path><path d="M14 12a2 2 0 0 0 2-2V8h-2"></path></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-3 h-8 w-8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><path d="M8 12a2 2 0 0 0 2-2V8H8"></path><path d="M14 12a2 2 0 0 0 2-2V8h-2"></path></svg>
 );
 const PracticeIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-3 h-6 w-6"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><path d="m9 14 2 2 4-4"></path></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-3 h-8 w-8"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><path d="m9 14 2 2 4-4"></path></svg>
 );
 
-const modeDescriptions: Record<AnalysisMode, string> = {
-    "Presentation Mode": "In Presentation Mode, your speech will be evaluated for general clarity, structure, and engagement.",
-    "Interview Mode": "In Interview Mode, the AI will assess how well you answer the specific interview question, focusing on relevance and confidence.",
-    "Practice Mode": "In Practice Mode, your answer will be compared against the 'perfect answer' you provide, with feedback on bridging the gaps."
-};
+const modeOptions = [
+    { 
+        value: "Presentation Mode", 
+        icon: PresentationIcon, 
+        title: "Presentation",
+        description: "Evaluates general clarity, structure, and engagement for public speaking.",
+    },
+    { 
+        value: "Interview Mode",
+        icon: InterviewIcon,
+        title: "Interview",
+        description: "Assesses how well you answer a specific interview question.",
+    },
+    {
+        value: "Practice Mode",
+        icon: PracticeIcon,
+        title: "Practice",
+        description: "Compares your answer against a 'perfect answer' you provide.",
+    }
+];
 
 export default function SpeechAnalysisClient() {
   const [mode, setMode] = useState<AnalysisMode>("Presentation Mode");
@@ -251,7 +266,7 @@ export default function SpeechAnalysisClient() {
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-lg flex-shrink-0 mt-1">1</div>
             <div className="w-full">
                 <h2 className="text-2xl font-headline font-semibold mb-4">Provide Your Speech</h2>
-                 <Card className="rounded-lg border shadow-lg bg-card/50 overflow-hidden transition-transform hover:scale-[1.02]">
+                 <Card className="rounded-lg border shadow-lg bg-card/50 transition-transform hover:scale-[1.02]">
                     <Tabs value={currentTab} onValueChange={(v) => { clearAudio(); setTranscript(""); setCurrentTab(v); }} className="w-full">
                         <CardHeader className="p-4 border-b">
                             <TabsList className="grid w-full grid-cols-3">
@@ -345,61 +360,54 @@ export default function SpeechAnalysisClient() {
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-lg flex-shrink-0 mt-1">2</div>
             <div className="w-full">
                  <h2 className="text-2xl font-headline font-semibold mb-4">Set Analysis Context</h2>
-                 <Card className="rounded-lg border shadow-lg bg-card/50 transition-transform hover:scale-[1.02]">
-                    <CardContent className="p-6 space-y-6">
-                        <RadioGroup
-                          value={mode}
-                          onValueChange={(v: any) => setMode(v)}
-                          className="grid grid-cols-1 sm:grid-cols-3 gap-4"
-                        >
-                          <div>
-                            <RadioGroupItem value="Presentation Mode" id="presentation-mode" className="sr-only peer" />
-                            <Label htmlFor="presentation-mode" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground font-semibold text-center">
-                              <PresentationIcon />
-                              Presentation
-                            </Label>
-                          </div>
-                          <div>
-                            <RadioGroupItem value="Interview Mode" id="interview-mode" className="sr-only peer" />
-                            <Label htmlFor="interview-mode" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground font-semibold text-center">
-                              <InterviewIcon />
-                              Interview
-                            </Label>
-                          </div>
-                          <div>
-                            <RadioGroupItem value="Practice Mode" id="practice-mode" className="sr-only peer" />
-                            <Label htmlFor="practice-mode" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground font-semibold text-center">
-                              <PracticeIcon />
-                              Practice
-                            </Label>
-                          </div>
-                        </RadioGroup>
-                        
-                        <div className="transition-all duration-300 ease-in-out">
-                            <div className="text-sm text-center text-muted-foreground p-4 bg-secondary/30 rounded-md h-full flex items-center justify-center">
-                               <p>{modeDescriptions[mode]}</p>
-                            </div>
-                            {(mode === "Interview Mode" || mode === "Practice Mode") && (
-                                <Textarea
-                                  id="question"
-                                  value={question}
-                                  onChange={(e) => setQuestion(e.target.value)}
-                                  placeholder="Enter the interview question here... e.g., Tell me about yourself."
-                                  className="bg-background mt-4"
-                                />
-                            )}
-                            {mode === "Practice Mode" && (
-                                <Textarea
-                                  id="perfect-answer"
-                                  value={perfectAnswer}
-                                  onChange={(e) => setPerfectAnswer(e.target.value)}
-                                  placeholder="Provide an ideal or 'perfect' answer for comparison."
-                                  className="bg-background mt-4"
-                                />
-                            )}
-                        </div>
-                    </CardContent>
-                </Card>
+                 <RadioGroup
+                    value={mode}
+                    onValueChange={(v: any) => setMode(v)}
+                    className="space-y-4"
+                 >
+                    {modeOptions.map(option => {
+                        const isSelected = mode === option.value;
+                        return (
+                             <Label key={option.value} htmlFor={option.value} className={cn(
+                                "block rounded-lg border-2 p-6 cursor-pointer transition-all duration-300",
+                                isSelected ? "border-primary shadow-lg" : "border-border bg-card/50 hover:border-primary/50"
+                             )}>
+                                <RadioGroupItem value={option.value} id={option.value} className="sr-only" />
+                                <div className="flex items-start gap-6">
+                                    <div className={cn("flex h-12 w-12 items-center justify-center rounded-full flex-shrink-0 mt-1", isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
+                                        <option.icon />
+                                    </div>
+                                    <div className="w-full">
+                                        <h3 className="font-headline text-lg font-semibold mb-1">{option.title}</h3>
+                                        <p className="text-muted-foreground text-sm mb-4">{option.description}</p>
+                                        <div className={cn("overflow-hidden transition-all duration-500 ease-in-out", isSelected ? "max-h-96" : "max-h-0")}>
+                                             {(option.value === "Interview Mode" || option.value === "Practice Mode") && (
+                                                <Textarea
+                                                id="question"
+                                                value={question}
+                                                onClick={(e) => e.preventDefault()}
+                                                onChange={(e) => setQuestion(e.target.value)}
+                                                placeholder="Enter the interview question here..."
+                                                className="bg-background mt-2"
+                                                />
+                                            )}
+                                            {option.value === "Practice Mode" && (
+                                                <Textarea
+                                                id="perfect-answer"
+                                                value={perfectAnswer}
+                                                onClick={(e) => e.preventDefault()}
+                                                onChange={(e) => setPerfectAnswer(e.target.value)}
+                                                placeholder="Provide an ideal or 'perfect' answer for comparison."
+                                                className="bg-background mt-4"
+                                                />
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                             </Label>
+                        )
+                    })}
+                 </RadioGroup>
             </div>
         </div>
       </div>
