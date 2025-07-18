@@ -9,7 +9,7 @@ export default function Header() {
         </h1>
         <ThemeToggle />
       </div>
-      <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+      <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
         Record or transcribe your speech to get AI-powered feedback on your delivery, language, and content.
       </p>
     </div>
