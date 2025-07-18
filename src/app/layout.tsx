@@ -16,7 +16,7 @@ const spaceGrotesk = Space_Grotesk({
 
 
 export const metadata: Metadata = {
-  title: "Speech Analysis Assistant",
+  title: "Verbal Insights",
   description: "AI-Powered Speech Analysis Assistant",
 };
 

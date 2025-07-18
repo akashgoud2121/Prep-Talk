@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Loader2, Mic, Upload, FileAudio, Download, X, Presentation, ClipboardCheck, MessageSquareQuote, WandSparkles } from "lucide-react";
+import { Loader2, Mic, Upload, X, Presentation, ClipboardCheck, MessageSquareQuote, WandSparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -14,6 +14,8 @@ import AnalysisDashboard from "@/components/analysis-dashboard";
 import EmptyState from "@/components/empty-state";
 import { generatePdfReport } from "@/lib/pdf";
 import { cn } from "@/lib/utils";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type AnalysisMode = "Presentation Mode" | "Interview Mode" | "Practice Mode";
 
@@ -23,37 +25,33 @@ interface CustomSpeechRecognition extends SpeechRecognition {
   lang: string;
 }
 
-const SectionTitle = ({ num, title }: { num: number; title: string }) => (
-  <div className="flex items-center gap-3 mb-4">
-    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold">
-      {num}
-    </div>
-    <h2 className="text-xl font-headline font-semibold">{title}</h2>
-  </div>
-);
-
 const ContextCard = ({
   icon,
   title,
+  description,
   isSelected,
   onClick,
 }: {
   icon: React.ReactNode;
   title: string;
+  description: string;
   isSelected: boolean;
   onClick: () => void;
 }) => (
   <button
     onClick={onClick}
     className={cn(
-      "flex w-full flex-col items-center justify-center gap-2 rounded-lg border-2 p-4 text-center transition-colors",
+      "flex w-full items-start gap-4 rounded-lg border p-4 text-left transition-colors",
       isSelected
         ? "border-primary bg-primary/10 text-primary"
         : "border-border bg-card hover:bg-accent"
     )}
   >
-    {icon}
-    <span className="font-medium">{title}</span>
+    <div className={cn("mt-1", isSelected ? 'text-primary' : 'text-muted-foreground')}>{icon}</div>
+    <div>
+      <h3 className="font-semibold text-foreground">{title}</h3>
+      <p className={cn("text-sm", isSelected ? 'text-primary/80' : 'text-muted-foreground')}>{description}</p>
+    </div>
   </button>
 );
 
@@ -72,6 +70,8 @@ export default function SpeechAnalysisClient() {
   const [analysisResult, setAnalysisResult] =
     useState<AnalyzeSpeechOutput | null>(null);
   const [isMounted, setIsMounted] = useState(false);
+  const [isSpeechRecognitionSupported, setIsSpeechRecognitionSupported] = useState(false);
+
   const { toast } = useToast();
 
   const recognitionRef = useRef<CustomSpeechRecognition | null>(null);
@@ -79,49 +79,43 @@ export default function SpeechAnalysisClient() {
   const audioChunksRef = useRef<Blob[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const SpeechRecognition =
-    typeof window !== "undefined"
-      ? window.SpeechRecognition || window.webkitSpeechRecognition
-      : null;
-
   useEffect(() => {
     setIsMounted(true);
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      setIsSpeechRecognitionSupported(true);
+      recognitionRef.current = new SpeechRecognition() as CustomSpeechRecognition;
+      const recognition = recognitionRef.current;
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = "en-US";
 
-    if (!SpeechRecognition) {
-        if (isMounted) {
-            console.warn("SpeechRecognition API is not supported in this browser.");
+      let final_transcript = "";
+      recognition.onresult = (event) => {
+        let interim_transcript = "";
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            final_transcript += event.results[i][0].transcript;
+          } else {
+            interim_transcript += event.results[i][0].transcript;
+          }
         }
-        return;
-    };
-    recognitionRef.current = new SpeechRecognition() as CustomSpeechRecognition;
-    const recognition = recognitionRef.current;
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = "en-US";
+        setTranscript(final_transcript + interim_transcript);
+      };
 
-    let final_transcript = "";
-    recognition.onresult = (event) => {
-      let interim_transcript = "";
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
-        if (event.results[i].isFinal) {
-          final_transcript += event.results[i][0].transcript;
-        } else {
-          interim_transcript += event.results[i][0].transcript;
-        }
-      }
-      setTranscript(final_transcript + interim_transcript);
-    };
+      recognition.onend = () => {
+        setIsListening(false);
+      };
 
-    recognition.onend = () => {
-      setIsListening(false);
-    };
-
-    return () => {
-        if (recognitionRef.current) {
-             recognitionRef.current.stop();
-        }
-    };
-  }, [SpeechRecognition, isMounted]);
+      return () => {
+          if (recognitionRef.current) {
+               recognitionRef.current.stop();
+          }
+      };
+    } else {
+        console.warn("SpeechRecognition API is not supported in this browser.");
+    }
+  }, []);
 
   const handleToggleListening = () => {
     if (!recognitionRef.current) return;
@@ -137,12 +131,13 @@ export default function SpeechAnalysisClient() {
   const handleToggleRecording = async () => {
     if (isRecording) {
       mediaRecorderRef.current?.stop();
+      setIsRecording(false);
     } else {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           audio: true,
         });
-        mediaRecorderRef.current = new MediaRecorder(stream);
+        mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
         audioChunksRef.current = [];
         setAudioURL(null);
         setAudioBlob(null);
@@ -150,21 +145,21 @@ export default function SpeechAnalysisClient() {
           audioChunksRef.current.push(event.data);
         };
         mediaRecorderRef.current.onstop = () => {
-          const blob = new Blob(audioChunksRef.current, { type: "audio/wav" });
+          const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
           setAudioBlob(blob);
           const url = URL.createObjectURL(blob);
           setAudioURL(url);
           stream.getTracks().forEach((track) => track.stop());
-          setIsRecording(false);
         };
         mediaRecorderRef.current.start();
         setIsRecording(true);
       } catch (error) {
+        console.error(error);
         toast({
           variant: "destructive",
           title: "Microphone Error",
           description:
-            "Could not access microphone. Please check your browser permissions.",
+            "Could not access microphone. Please check permissions and that your browser supports audio/webm recording.",
         });
       }
     }
@@ -182,10 +177,13 @@ export default function SpeechAnalysisClient() {
 
   const clearAudio = () => {
     setAudioBlob(null);
+    if(audioURL) {
+      URL.revokeObjectURL(audioURL);
+    }
     setAudioURL(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
-
+  
   const fileToDataUri = (file: Blob) =>
     new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
@@ -247,104 +245,113 @@ export default function SpeechAnalysisClient() {
     }
   }, [analysisResult]);
   
-  const contextDescriptions: Record<AnalysisMode, string> = {
-    'Presentation Mode': 'In Presentation Mode, your speech will be evaluated for general clarity, structure, and engagement.',
-    'Interview Mode': 'In Interview Mode, your speech will be evaluated based on how well you answer the provided interview question.',
-    'Practice Mode': 'In Practice Mode, your speech will be compared against the provided "perfect answer" for accuracy and completeness.'
-  }
-
-  const renderInputArea = () => {
-    if (audioURL) {
-      return (
-         <div className="space-y-4">
-            <audio controls src={audioURL} className="w-full"></audio>
-            <div className="flex gap-2">
-                <Button onClick={() => window.open(audioURL)} variant="outline" className="w-full"><Download /> Download</Button>
-                <Button onClick={clearAudio} variant="destructive" className="w-full"><X /> Clear</Button>
-            </div>
-          </div>
-      )
-    }
-
-    return (
-       <Textarea
-          placeholder="Your transcribed speech will appear here..."
-          value={transcript}
-          onChange={(e) => setTranscript(e.target.value)}
-          className="h-36 bg-input"
-          readOnly={isListening}
-        />
-    )
-  }
+  const contextDescriptions = {
+    'Presentation Mode': 'Evaluated for clarity, structure, and engagement.',
+    'Interview Mode': 'Evaluated based on how well you answer the question.',
+    'Practice Mode': 'Compared against a "perfect answer" for accuracy.'
+  };
 
   return (
     <div className="w-full max-w-5xl space-y-8">
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        <div className="space-y-4">
-            <SectionTitle num={1} title="Provide Your Speech" />
-            <div className="rounded-lg border bg-card p-4 space-y-4">
-                <div className="grid grid-cols-3 gap-2 rounded-md bg-input p-1">
-                    <Button variant={currentTab === 'live' ? 'secondary' : 'ghost'} onClick={() => { setCurrentTab('live'); clearAudio(); }}><Mic className="mr-2"/>Live</Button>
-                    <Button variant={currentTab === 'record' ? 'secondary' : 'ghost'} onClick={() => setCurrentTab('record')}><WandSparkles className="mr-2" />Record</Button>
-                    <Button variant={currentTab === 'upload' ? 'secondary' : 'ghost'} asChild><label htmlFor="audio-upload" className="cursor-pointer inline-flex items-center justify-center"><Upload className="mr-2"/>Upload</label></Button>
-                    <input id="audio-upload" type="file" accept="audio/*" onChange={handleFileChange} className="hidden" ref={fileInputRef}/>
-                </div>
-                 {renderInputArea()}
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:items-start">
+        <Card className="lg:sticky lg:top-24">
+            <CardHeader>
+                <CardTitle className="font-headline text-xl">1. Provide Your Speech</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <Tabs value={currentTab} onValueChange={(v) => { clearAudio(); setCurrentTab(v); }} className="w-full">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="live">Live Transcription</TabsTrigger>
+                    <TabsTrigger value="record">Record Audio</TabsTrigger>
+                    <TabsTrigger value="upload">Upload File</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="live" className="mt-4">
+                     <Textarea
+                        placeholder="Your transcribed speech will appear here..."
+                        value={transcript}
+                        onChange={(e) => setTranscript(e.target.value)}
+                        className="h-36 bg-background"
+                        readOnly={isListening}
+                      />
+                      <Button onClick={handleToggleListening} className="w-full mt-4" disabled={!isMounted || !isSpeechRecognitionSupported}>
+                        <Mic className="mr-2" />
+                        {isListening ? "Stop Transcription" : "Start Transcription"}
+                      </Button>
+                  </TabsContent>
+                  <TabsContent value="record" className="mt-4">
+                     {audioURL ? (
+                       <div className="space-y-4">
+                          <audio controls src={audioURL} className="w-full"></audio>
+                          <Button onClick={clearAudio} variant="outline" className="w-full"><X className="mr-2" /> Clear Recording</Button>
+                        </div>
+                     ) : (
+                      <div className="flex flex-col items-center justify-center space-y-4 rounded-md border border-dashed bg-background p-8 h-36">
+                        <p className="text-sm text-muted-foreground">{isRecording ? "Recording in progress..." : "Click button to start recording"}</p>
+                        <Button onClick={handleToggleRecording} variant={isRecording ? "destructive" : "default"} size="lg">
+                          <Mic className="mr-2" />
+                          {isRecording ? "Stop Recording" : "Start Recording"}
+                        </Button>
+                      </div>
+                     )}
+                  </TabsContent>
+                  <TabsContent value="upload" className="mt-4">
+                      {audioURL ? (
+                         <div className="space-y-4">
+                            <audio controls src={audioURL} className="w-full"></audio>
+                            <Button onClick={clearAudio} variant="outline" className="w-full"><X className="mr-2" /> Clear Selection</Button>
+                          </div>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center space-y-2 rounded-md border border-dashed bg-background p-8 h-36">
+                          <Upload className="h-8 w-8 text-muted-foreground"/>
+                          <p className="text-sm text-muted-foreground">Select an audio file</p>
+                          <Button asChild size="sm">
+                            <label htmlFor="audio-upload">
+                              Browse Files
+                              <input id="audio-upload" type="file" accept="audio/*" onChange={handleFileChange} className="hidden" ref={fileInputRef}/>
+                            </label>
+                          </Button>
+                        </div>
+                      )}
+                  </TabsContent>
+                </Tabs>
+            </CardContent>
+        </Card>
 
-                <Button
-                  onClick={currentTab === 'live' ? handleToggleListening : handleToggleRecording}
-                  className="w-full"
-                  disabled={currentTab === 'live' && (!isMounted || !SpeechRecognition)}
-                >
-                  <Mic className="mr-2" />
-                  {currentTab === 'live' 
-                    ? (isListening ? "Stop Live Transcription" : "Start Live Transcription")
-                    : (isRecording ? "Stop Recording" : "Start Recording")
-                  }
-                </Button>
-            </div>
-        </div>
-
-        <div className="space-y-4">
-            <SectionTitle num={2} title="Set Analysis Context" />
-            <div className="rounded-lg border bg-card p-4 space-y-4">
-                <div className="grid grid-cols-3 gap-2">
-                    <ContextCard icon={<Presentation size={24}/>} title="Presentation" isSelected={mode === 'Presentation Mode'} onClick={() => setMode('Presentation Mode')} />
-                    <ContextCard icon={<MessageSquareQuote size={24}/>} title="Interview" isSelected={mode === 'Interview Mode'} onClick={() => setMode('Interview Mode')} />
-                    <ContextCard icon={<ClipboardCheck size={24}/>} title="Practice" isSelected={mode === 'Practice Mode'} onClick={() => setMode('Practice Mode')} />
+        <Card>
+            <CardHeader>
+                <CardTitle className="font-headline text-xl">2. Set Analysis Context</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="space-y-2">
+                    <ContextCard icon={<Presentation size={20}/>} title="Presentation" description={contextDescriptions['Presentation Mode']} isSelected={mode === 'Presentation Mode'} onClick={() => setMode('Presentation Mode')} />
+                    <ContextCard icon={<MessageSquareQuote size={20}/>} title="Interview" description={contextDescriptions['Interview Mode']} isSelected={mode === 'Interview Mode'} onClick={() => setMode('Interview Mode')} />
+                    <ContextCard icon={<ClipboardCheck size={20}/>} title="Practice" description={contextDescriptions['Practice Mode']} isSelected={mode === 'Practice Mode'} onClick={() => setMode('Practice Mode')} />
                 </div>
-                 <div className="rounded-lg bg-input p-4 text-sm text-muted-foreground">
-                    {contextDescriptions[mode]}
-                 </div>
                 {(mode === "Interview Mode" || mode === "Practice Mode") && (
-                  <div className="space-y-2">
                     <Textarea
                       id="question"
                       value={question}
                       onChange={(e) => setQuestion(e.target.value)}
-                      placeholder="e.g., Tell me about yourself."
+                      placeholder="Enter the interview question here... e.g., Tell me about yourself."
                       className="bg-background"
                     />
-                  </div>
                 )}
                 {mode === "Practice Mode" && (
-                  <div className="space-y-2">
                     <Textarea
                       id="perfect-answer"
                       value={perfectAnswer}
                       onChange={(e) => setPerfectAnswer(e.target.value)}
-                      placeholder="Provide an ideal answer for comparison."
+                      placeholder="Provide an ideal or 'perfect' answer for comparison."
                       className="bg-background"
                     />
-                  </div>
                 )}
-            </div>
-        </div>
+            </CardContent>
+        </Card>
 
       </div>
 
-      <div className="flex justify-center">
-        <Button onClick={handleAnalyze} size="lg" disabled={isLoading}>
+      <div className="flex justify-center py-4">
+        <Button onClick={handleAnalyze} size="lg" disabled={isLoading} className="w-full max-w-sm">
           {isLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
