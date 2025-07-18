@@ -1,16 +1,13 @@
-import { MicVocal } from "lucide-react";
-
 export default function Header() {
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex max-w-5xl items-center justify-between">
-        <div className="flex items-center gap-2">
-          <MicVocal className="h-6 w-6 text-primary" />
-          <h1 className="text-xl font-bold font-headline text-foreground">
-            Verbal Insights
-          </h1>
-        </div>
-      </div>
-    </header>
+    <div className="w-full max-w-5xl text-center mb-12">
+      <h1 className="text-4xl md:text-5xl font-bold font-headline flex items-center justify-center gap-3">
+        <span>🎙️</span>
+        Speech Analysis Assistant
+      </h1>
+      <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
+        Upload your speech, get instant AI-powered feedback, and improve your public speaking skills.
+      </p>
+    </div>
   );
 }
