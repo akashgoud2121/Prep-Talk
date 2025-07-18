@@ -3,7 +3,7 @@ import type { AnalyzeSpeechOutput } from "@/ai/flows/analyze-speech";
 
 export const generatePdfReport = (data: AnalyzeSpeechOutput): void => {
   const doc = new jsPDF();
-  const { metadata, evaluationCriteria, totalScore, overallAssessment } = data;
+  const { metadata, evaluationCriteria, totalScore, overallAssessment, highlightedTranscription } = data;
 
   const pageHeight =
     doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
@@ -127,7 +127,7 @@ export const generatePdfReport = (data: AnalyzeSpeechOutput): void => {
     });
   });
 
-  if (metadata.fullTranscription) {
+  if (highlightedTranscription) {
     checkY(line_height * 3);
     doc.addPage();
     y = margin;
@@ -140,8 +140,9 @@ export const generatePdfReport = (data: AnalyzeSpeechOutput): void => {
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
+    const fullText = highlightedTranscription.map(s => s.text).join(' ');
     const transcriptionLines = doc.splitTextToSize(
-      metadata.fullTranscription,
+      fullText,
       pageWidth - margin * 2
     );
     doc.text(transcriptionLines, margin, y);

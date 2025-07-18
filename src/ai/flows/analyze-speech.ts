@@ -29,6 +29,12 @@ const evaluationCriteriaEnum = z.enum([
   "Length and Time Management"
 ]);
 
+const evaluationCategoryEnum = z.enum([
+    "Delivery",
+    "Language",
+    "Content"
+]);
+
 const HighlightedSegmentSchema = z.object({
   text: z.string(),
   type: z.enum(['default', 'filler', 'pause']),
@@ -48,13 +54,14 @@ const AnalyzeSpeechOutputSchema = z.object({
     wordCount: z.number().describe('The number of words in the speech sample.'),
     fillerWordCount: z.number().describe('The number of filler words (e.g., "um", "ah", "like") in the speech sample.'),
     speechRateWPM: z.number().describe('The speech rate in words per minute.'),
-    averagePauseDurationMs: z.number().describe('The average pause duration in milliseconds.'),
-    pitchVariance: z.number().describe('The variance in pitch during the speech sample.'),
+    averagePauseDurationMs: z.number().describe('The average pause duration in milliseconds. If not available from the source, estimate based on text.'),
+    pitchVariance: z.number().describe('The variance in pitch during the speech sample. If not available from the source, estimate based on text.'),
     audioDurationSeconds: z.number().optional().describe('The duration of the audio in seconds, if audio was provided.'),
   }),
-  highlightedTranscription: z.array(HighlightedSegmentSchema).optional().describe('The full transcription, segmented for highlighting filler words and pauses.'),
+  highlightedTranscription: z.array(HighlightedSegmentSchema).optional().describe('The full transcription, segmented for highlighting filler words and pauses. Concatenating all text fields should reconstruct the full transcription with pause annotations.'),
   evaluationCriteria: z.array(
     z.object({
+      category: evaluationCategoryEnum.describe("The category of the criteria. Assign one of: 'Delivery', 'Language', or 'Content'"),
       criteria: evaluationCriteriaEnum.describe('The specific evaluation criteria.'),
       score: z.number().min(0).max(10).describe('The score for the criteria (0-10).'),
       evaluation: z.string().describe('A brief evaluation of the speech sample against the criteria.'),
@@ -87,15 +94,15 @@ Context: {{{mode}}}
 Return a structured JSON object with the following schema:
 ${AnalyzeSpeechOutputSchema.description}\n\nFollow these instructions when generating the JSON:
 - Evaluate the speech sample on ALL 15 of the following criteria: ${evaluationCriteriaEnum.options.join(', ')}.
-- For each criterion, provide a score from 0-10, a brief evaluation, and actionable feedback.
+- For each criterion, provide a score from 0-10, a brief evaluation, actionable feedback, and a category ('Delivery', 'Language', or 'Content').
 - The totalScore is from 0 to 100, and evaluate the speech sample and context as a whole.
 - The speechRateWPM should be a number calculated from the speechSample.
 - The wordCount should be the number of words from the speechSample.
 - The fillerWordCount should be the number of filler words from the speechSample. Filler words include: like, um, uh, so, you know, actually, basically, I mean, okay, right.
-- The averagePauseDurationMs should be a number calculated from the speechSample.
-- The pitchVariance should be a number calculated from the speechSample.
+- The averagePauseDurationMs should be a number estimated from the speechSample even if it's just text.
+- The pitchVariance should be a number estimated from the speechSample even if it's just text.
 - If the speechSample is an audio data URI, the audioDurationSeconds should be a number calculated from the audio data URI.
-- The highlightedTranscription should be an array of objects. Segment the transcription into parts. For each part, specify if its type is 'default', 'filler' (for filler words like 'um', 'ah', 'like'), or 'pause' (for significant silences). The text for a pause should represent the pause, e.g., '[PAUSE: 1.2s]'. Concatenating all 'text' fields should reconstruct the full transcription with pause annotations.
+- The highlightedTranscription must be an array of objects. Segment the entire transcription into parts. For each part, specify if its type is 'default', 'filler' (for filler words like 'um', 'ah', 'like'), or 'pause' (for significant silences). The text for a pause should represent the pause, e.g., '[PAUSE: 1.2s]'. Concatenating all 'text' fields must reconstruct the full transcription with pause annotations. Do not leave this field empty.
 `,
 });
 

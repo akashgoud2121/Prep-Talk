@@ -96,7 +96,7 @@ export default function AnalysisDashboard({
         </CardContent>
       </Card>
 
-      {highlightedTranscription && (
+      {highlightedTranscription && highlightedTranscription.length > 0 && (
          <Card className="shadow-lg">
             <CardHeader>
                 <CardTitle className="font-headline text-2xl">Full Transcription</CardTitle>
@@ -110,13 +110,17 @@ export default function AnalysisDashboard({
 
       <div className="space-y-4">
         <h2 className="font-headline text-2xl font-semibold">Key Metrics</h2>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
             <MetricCard title="Word Count" value={metadata.wordCount} />
             <MetricCard title="Filler Words" value={metadata.fillerWordCount} />
             <MetricCard title="Speech Rate (WPM)" value={metadata.speechRateWPM} />
             <MetricCard
+              title="Avg. Pause (ms)"
+              value={metadata.averagePauseDurationMs}
+            />
+             <MetricCard
               title="Pitch Variance"
-              value={`${metadata.pitchVariance.toFixed(2)}`}
+              value={metadata.pitchVariance.toFixed(2)}
             />
         </div>
       </div>
