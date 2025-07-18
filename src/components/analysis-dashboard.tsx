@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { AnalyzeSpeechOutput } from "@/ai/flows/analyze-speech";
@@ -10,7 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Download, Star } from "lucide-react";
+import { Download, Star, FileText, FilterX, Zap, PauseCircle, TrendingUp, Rabbit, MicVocal, Hourglass } from "lucide-react";
 import TranscriptionDisplay from "./transcription-display";
 
 interface AnalysisDashboardProps {
@@ -22,15 +23,20 @@ const MetricCard = ({
   title,
   value,
   unit,
+  icon: Icon,
 }: {
   title: string;
   value: string | number;
   unit?: string;
+  icon: React.ElementType;
 }) => (
   <Card className="bg-secondary/30">
     <CardHeader className="pb-2">
-      <CardDescription>{title}</CardDescription>
-      <CardTitle className="text-3xl font-bold font-headline">
+      <CardDescription className="flex items-center gap-2 text-muted-foreground">
+        <Icon className="h-4 w-4" />
+        <span>{title}</span>
+      </CardDescription>
+      <CardTitle className="text-3xl font-bold font-headline pl-6">
         {value}
         {unit && <span className="text-xl font-medium text-muted-foreground ml-1">{unit}</span>}
       </CardTitle>
@@ -116,14 +122,14 @@ export default function AnalysisDashboard({
       <div className="space-y-4">
         <h2 className="font-headline text-2xl font-semibold">Key Metrics</h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <MetricCard title="Word Count" value={metadata.wordCount} />
-            <MetricCard title="Filler Words" value={metadata.fillerWordCount} />
-            <MetricCard title="Speech Rate" value={metadata.speechRateWPM} unit="WPM" />
-            <MetricCard title="Avg. Pause" value={metadata.averagePauseDurationMs} unit="ms" />
-            <MetricCard title="Pitch Variance" value={metadata.pitchVariance.toFixed(2)} />
-            <MetricCard title="Pace Score" value={metadata.paceScore} unit="/ 100" />
-            <MetricCard title="Clarity Score" value={metadata.clarityScore} unit="/ 100" />
-            <MetricCard title="Pause Time" value={metadata.pausePercentage.toFixed(1)} unit="%" />
+            <MetricCard title="Word Count" value={metadata.wordCount} icon={FileText} />
+            <MetricCard title="Filler Words" value={metadata.fillerWordCount} icon={FilterX} />
+            <MetricCard title="Speech Rate" value={metadata.speechRateWPM} unit="WPM" icon={Zap} />
+            <MetricCard title="Avg. Pause" value={metadata.averagePauseDurationMs} unit="ms" icon={PauseCircle} />
+            <MetricCard title="Pitch Variance" value={metadata.pitchVariance.toFixed(2)} icon={TrendingUp} />
+            <MetricCard title="Pace Score" value={metadata.paceScore} unit="/ 100" icon={Rabbit} />
+            <MetricCard title="Clarity Score" value={metadata.clarityScore} unit="/ 100" icon={MicVocal} />
+            <MetricCard title="Pause Time" value={metadata.pausePercentage.toFixed(1)} unit="%" icon={Hourglass} />
         </div>
       </div>
 

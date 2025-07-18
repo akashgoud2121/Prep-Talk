@@ -49,6 +49,28 @@ export const generatePdfReport = (data: AnalyzeSpeechOutput): void => {
   doc.text(assessmentLines, margin, y);
   y += assessmentLines.length * line_height + line_height;
 
+  if (highlightedTranscription) {
+    checkY(line_height * 3);
+    doc.addPage();
+    y = margin;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text("Full Transcription", margin, y);
+    y += line_height;
+    doc.line(margin, y, pageWidth - margin, y);
+    y += line_height;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    const fullText = highlightedTranscription.map(s => s.text).join(' ');
+    const transcriptionLines = doc.splitTextToSize(
+      fullText,
+      pageWidth - margin * 2
+    );
+    doc.text(transcriptionLines, margin, y);
+    y += transcriptionLines.length * line_height + line_height;
+  }
+  
   checkY(line_height);
 
   doc.setFont("helvetica", "bold");
@@ -129,27 +151,6 @@ export const generatePdfReport = (data: AnalyzeSpeechOutput): void => {
       y += feedbackLines.length * line_height + line_height / 2;
     });
   });
-
-  if (highlightedTranscription) {
-    checkY(line_height * 3);
-    doc.addPage();
-    y = margin;
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(16);
-    doc.text("Full Transcription", margin, y);
-    y += line_height;
-    doc.line(margin, y, pageWidth - margin, y);
-    y += line_height;
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    const fullText = highlightedTranscription.map(s => s.text).join(' ');
-    const transcriptionLines = doc.splitTextToSize(
-      fullText,
-      pageWidth - margin * 2
-    );
-    doc.text(transcriptionLines, margin, y);
-  }
 
   doc.save("verbal-insights-report.pdf");
 };
