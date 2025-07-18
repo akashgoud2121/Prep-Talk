@@ -1,3 +1,4 @@
+
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
@@ -17,16 +18,6 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
     ],
-  },
-  webpack: (config, { isServer }) => {
-    // This is to solve the 'fs' module not found error in wav package
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-      };
-    }
-    return config;
   },
 };
 

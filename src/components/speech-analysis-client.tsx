@@ -19,7 +19,6 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import wav from "wav";
 
 type AnalysisMode = "Presentation Mode" | "Interview Mode" | "Practice Mode";
 
@@ -63,14 +62,11 @@ export default function SpeechAnalysisClient() {
   const { toast } = useToast();
 
   const recognitionRef = useRef<CustomSpeechRecognition | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const mediaStreamSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
-  const scriptProcessorNodeRef = useRef<ScriptProcessorNode | null>(null);
-  const audioChunksRef = useRef<Float32Array[]>([]);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // This effect runs only on the client, so `window` is safe to use.
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
       setIsSpeechRecognitionSupported(true);
@@ -101,9 +97,6 @@ export default function SpeechAnalysisClient() {
         if (recognitionRef.current) {
           recognitionRef.current.stop();
         }
-        if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-          audioContextRef.current.close();
-        }
       };
     } else {
       console.warn("SpeechRecognition API is not supported in this browser.");
@@ -121,88 +114,52 @@ export default function SpeechAnalysisClient() {
     setIsListening(!isListening);
   };
   
-  const stopRecording = () => {
-      if (mediaStreamSourceRef.current && scriptProcessorNodeRef.current) {
-          mediaStreamSourceRef.current.disconnect();
-          scriptProcessorNodeRef.current.disconnect();
-          mediaStreamSourceRef.current.mediaStream.getTracks().forEach(track => track.stop());
-      }
-      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-          audioContextRef.current.close();
-      }
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      setIsRecording(true);
+      audioChunksRef.current = [];
+      const newMediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = newMediaRecorder;
+      newMediaRecorder.start();
 
+      newMediaRecorder.ondataavailable = (event) => {
+        audioChunksRef.current.push(event.data);
+      };
+
+      newMediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        setAudioBlob(audioBlob);
+        const audioUrl = URL.createObjectURL(audioBlob);
+        setAudioURL(audioUrl);
+        // Stop all tracks to turn off the microphone light
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+    } catch (error) {
+      console.error("Microphone access denied:", error);
+      toast({
+        variant: "destructive",
+        title: "Microphone Error",
+        description: "Could not access microphone. Please check permissions.",
+      });
       setIsRecording(false);
-      
-      const pcmData = new Float32Array(audioChunksRef.current.reduce((acc, chunk) => acc + chunk.length, 0));
-      let offset = 0;
-      for (const chunk of audioChunksRef.current) {
-          pcmData.set(chunk, offset);
-          offset += chunk.length;
-      }
-      
-      const encoder = new wav.Encoder({
-          sampleRate: audioContextRef.current?.sampleRate || 44100,
-          channels: 1,
-          bitDepth: 16
-      });
-
-      const wavChunks: any[] = [];
-      encoder.on('data', chunk => wavChunks.push(chunk));
-      encoder.on('end', () => {
-          const blob = new Blob(wavChunks, { type: 'audio/wav' });
-          setAudioBlob(blob);
-          const url = URL.createObjectURL(blob);
-          setAudioURL(url);
-      });
-      
-      // Convert Float32Array to Int16Array for WAV encoding
-      const int16PcmData = new Int16Array(pcmData.length);
-      for (let i = 0; i < pcmData.length; i++) {
-        int16PcmData[i] = Math.max(-1, Math.min(1, pcmData[i])) * 32767;
-      }
-      const buffer = Buffer.from(int16PcmData.buffer);
-
-      encoder.write(buffer);
-      encoder.end();
+    }
   };
 
-  const handleToggleRecording = async () => {
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+    setIsRecording(false);
+  };
+
+  const handleToggleRecording = () => {
     if (isRecording) {
       stopRecording();
     } else {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          audio: true,
-        });
-        
-        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-        mediaStreamSourceRef.current = audioContextRef.current.createMediaStreamSource(stream);
-        scriptProcessorNodeRef.current = audioContextRef.current.createScriptProcessor(4096, 1, 1);
-        
-        audioChunksRef.current = [];
-        setAudioURL(null);
-        setAudioBlob(null);
-
-        scriptProcessorNodeRef.current.onaudioprocess = (event) => {
-            if (isRecording) {
-                const inputData = event.inputBuffer.getChannelData(0);
-                audioChunksRef.current.push(new Float32Array(inputData));
-            }
-        };
-
-        mediaStreamSourceRef.current.connect(scriptProcessorNodeRef.current);
-        scriptProcessorNodeRef.current.connect(audioContextRef.current.destination);
-
-        setIsRecording(true);
-      } catch (error) {
-        console.error(error);
-        toast({
-          variant: "destructive",
-          title: "Microphone Error",
-          description:
-            "Could not access microphone. Please check permissions.",
-        });
-      }
+      clearAudio();
+      startRecording();
     }
   };
 
@@ -223,6 +180,9 @@ export default function SpeechAnalysisClient() {
     }
     setAudioURL(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
+    if (isRecording) {
+      stopRecording();
+    }
   };
   
   const fileToDataUri = (file: Blob) =>

@@ -1,3 +1,4 @@
+
 {
   "compilerOptions": {
     "target": "ES2017",
@@ -20,9 +21,10 @@
     ],
     "paths": {
       "@/*": ["./src/*"]
-    },
-    "types": ["@types/wav"]
+    }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": ["node_modules"]
 }
+
+    
