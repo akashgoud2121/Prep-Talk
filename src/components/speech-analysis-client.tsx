@@ -71,6 +71,7 @@ export default function SpeechAnalysisClient() {
   const [isLoading, setIsLoading] = useState(false);
   const [analysisResult, setAnalysisResult] =
     useState<AnalyzeSpeechOutput | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
   const { toast } = useToast();
 
   const recognitionRef = useRef<CustomSpeechRecognition | null>(null);
@@ -84,7 +85,14 @@ export default function SpeechAnalysisClient() {
       : null;
 
   useEffect(() => {
-    if (!SpeechRecognition) return;
+    setIsMounted(true);
+
+    if (!SpeechRecognition) {
+        if (isMounted) {
+            console.warn("SpeechRecognition API is not supported in this browser.");
+        }
+        return;
+    };
     recognitionRef.current = new SpeechRecognition() as CustomSpeechRecognition;
     const recognition = recognitionRef.current;
     recognition.continuous = true;
@@ -109,11 +117,14 @@ export default function SpeechAnalysisClient() {
     };
 
     return () => {
-      recognition.stop();
+        if (recognitionRef.current) {
+             recognitionRef.current.stop();
+        }
     };
-  }, [SpeechRecognition]);
+  }, [SpeechRecognition, isMounted]);
 
   const handleToggleListening = () => {
+    if (!recognitionRef.current) return;
     if (isListening) {
       recognitionRef.current?.stop();
     } else {
@@ -283,7 +294,7 @@ export default function SpeechAnalysisClient() {
                 <Button
                   onClick={currentTab === 'live' ? handleToggleListening : handleToggleRecording}
                   className="w-full"
-                  disabled={!SpeechRecognition && currentTab === 'live'}
+                  disabled={currentTab === 'live' && (!isMounted || !SpeechRecognition)}
                 >
                   <Mic className="mr-2" />
                   {currentTab === 'live' 
