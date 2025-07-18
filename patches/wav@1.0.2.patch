@@ -1,43 +1,46 @@
 diff --git a/node_modules/wav/lib/file-writer.js b/node_modules/wav/lib/file-writer.js
-index 0c61148..2d27771 100644
+index 451a84f..e543632 100644
 --- a/node_modules/wav/lib/file-writer.js
 +++ b/node_modules/wav/lib/file-writer.js
-@@ -1,9 +1,8 @@
- /**
-  * A Writable stream that writes a WAV file.
-  *
-- * @param {String} path The path to the WAV file to create.
-  * @param {Object} opts The options object.
+@@ -3,7 +3,7 @@
+  * file, and is also a readable stream that will output the final WAV file.
   */
+ 
 -var fs = require('fs');
--var Writer = require('./writer');
--var inherits = require('util').inherits;
-+var Writer = require("./writer");
-+var inherits = require("util").inherits;
++// var fs = require('fs');
+ var Writer = require('./writer');
+ var inherits = require('util').inherits;
  
- /**
-  * The `FileWriter` class.
-@@ -11,9 +10,13 @@ var inherits = require('util').inherits;
-  * inherits from `Writer`.
+@@ -34,7 +34,8 @@
+  * the WAV file to be written to.
+  */
+ function FileWriter (path, opts) {
+-  var stream = fs.createWriteStream(path, opts);
++  // var stream = fs.createWriteStream(path, opts);
++  var stream = {};
+   Writer.call(this, opts);
+   this.path = path;
+   this.stream = stream;
+diff --git a/node_modules/wav/lib/reader.js b/node_modules/wav/lib/reader.js
+index 720ea21..bb07127 100644
+--- a/node_modules/wav/lib/reader.js
++++ b/node_modules/wav/lib/reader.js
+@@ -3,7 +3,7 @@
+  * file.
   */
  
--function FileWriter (path, opts) {
--  if (!(this instanceof FileWriter)) {
--    return new FileWriter(path, opts);
-+function FileWriter(path, opts) {
-+  if (typeof path === "object") {
-+    opts = path;
-+    path = null;
-+  }
-+  if (!(this instanceof FileWriter) && !path) {
-+    return new FileWriter(path || opts, opts);
-   }
-   Writer.call(this, opts);
--  this.path = path;
--  this.file = fs.createWriteStream(path, { flags: 'w' });
--  this.file.on('error', this.emit.bind(this, 'error'));
--  this.pipe(this.file);
- }
-+
- inherits(FileWriter, Writer);
-+module.exports = FileWriter;
+-var fs = require('fs');
++// var fs = require('fs');
+ var util = require('util');
+ var Stream = require('stream');
+ var constants = require('./constants');
+@@ -32,7 +32,8 @@
+  * the WAV file to be read from.
+  */
+ function Reader (path, opts) {
+-  var stream = fs.createReadStream(path, opts);
++  // var stream = fs.createReadStream(path, opts);
++  var stream = {};
+   Stream.call(this, opts);
+   this.path = path;
+   this.stream = stream;
