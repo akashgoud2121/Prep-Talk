@@ -298,16 +298,17 @@ export default function SpeechAnalysisClient() {
                            </div>
                          </TabsContent>
                          <TabsContent value="upload">
-                            <CardContent className="p-4">
+                            <CardContent className="p-4 h-[252px] flex flex-col">
                                 {audioURL ? (
-                                <div className="space-y-4">
+                                <div className="space-y-4 flex-grow flex flex-col justify-center">
                                     <audio controls src={audioURL} className="w-full"></audio>
                                     </div>
                                 ) : (
-                                <div className="flex flex-col items-center justify-center space-y-2 rounded-md border border-dashed bg-background h-48">
-                                    <Upload className="h-8 w-8 text-muted-foreground"/>
-                                    <p className="text-sm text-muted-foreground">Select an audio file</p>
-                                </div>
+                                <label htmlFor="audio-upload" className="w-full h-full flex flex-col items-center justify-center p-6 border-2 border-dashed border-muted-foreground/30 rounded-lg cursor-pointer hover:bg-secondary/50 transition-colors">
+                                    <Upload className="h-10 w-10 text-muted-foreground/50 mb-2"/>
+                                    <p className="text-muted-foreground">Drop an audio file here or click to select.</p>
+                                    <input id="audio-upload" type="file" accept="audio/*" onChange={handleFileChange} className="hidden" ref={fileInputRef}/>
+                                </label>
                                 )}
                             </CardContent>
                              <div className="flex items-center p-4 bg-muted/50">
@@ -318,7 +319,6 @@ export default function SpeechAnalysisClient() {
                                     <label htmlFor="audio-upload">
                                         <Upload className="mr-2 h-5 w-5" />
                                         Browse Files
-                                        <input id="audio-upload" type="file" accept="audio/*" onChange={handleFileChange} className="hidden" ref={fileInputRef}/>
                                     </label>
                                     </Button>
                                 )}
