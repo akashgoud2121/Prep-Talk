@@ -28,13 +28,13 @@ interface CustomSpeechRecognition extends SpeechRecognition {
 }
 
 const PresentationIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-3 h-8 w-8"><path d="M2 3h20"></path><path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3"></path><path d="m7 21 5-5 5 5"></path></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><path d="M2 3h20"></path><path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3"></path><path d="m7 21 5-5 5 5"></path></svg>
 );
 const InterviewIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-3 h-8 w-8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><path d="M8 12a2 2 0 0 0 2-2V8H8"></path><path d="M14 12a2 2 0 0 0 2-2V8h-2"></path></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><path d="M8 12a2 2 0 0 0 2-2V8H8"></path><path d="M14 12a2 2 0 0 0 2-2V8h-2"></path></svg>
 );
 const PracticeIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-3 h-8 w-8"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><path d="m9 14 2 2 4-4"></path></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><path d="m9 14 2 2 4-4"></path></svg>
 );
 
 const modeOptions = [
@@ -262,9 +262,11 @@ export default function SpeechAnalysisClient() {
   return (
     <div className="w-full max-w-7xl space-y-8">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-        {/* Section 1: Provide Speech */}
         <div className="w-full space-y-4">
-            <h2 className="text-2xl font-headline font-semibold">1. Provide Your Speech</h2>
+            <h2 className="flex items-center gap-3 font-headline text-2xl font-semibold">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">1</span>
+                Provide Your Speech
+            </h2>
             <Card className="rounded-lg border shadow-lg bg-card/50 w-full h-full">
                 <Tabs value={currentTab} onValueChange={(v) => { clearAudio(); setTranscript(""); setCurrentTab(v); }} className="w-full flex flex-col h-full">
                     <CardHeader className="p-4 border-b">
@@ -360,9 +362,11 @@ export default function SpeechAnalysisClient() {
             </Card>
         </div>
 
-        {/* Section 2: Set Context */}
         <div className="w-full space-y-4">
-             <h2 className="text-2xl font-headline font-semibold">2. Set Analysis Context</h2>
+             <h2 className="flex items-center gap-3 font-headline text-2xl font-semibold">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">2</span>
+                Set Analysis Context
+            </h2>
              <div className="space-y-4">
                 {modeOptions.map(option => {
                     const isSelected = mode === option.value;
@@ -454,5 +458,3 @@ export default function SpeechAnalysisClient() {
     </div>
   );
 }
-
-    
