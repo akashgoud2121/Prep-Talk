@@ -233,7 +233,7 @@ export default function SpeechAnalysisClient() {
   }, [analysisResult]);
   
   return (
-    <div className="w-full max-w-5xl space-y-8">
+    <div className="w-full max-w-7xl space-y-8">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
         <div className="flex items-start gap-4">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-lg flex-shrink-0 mt-1">1</div>
