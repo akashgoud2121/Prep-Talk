@@ -108,7 +108,7 @@ const EvaluationCard = ({
     <CardContent className="p-4 flex items-start gap-4">
         <ScoreCircle score={score} />
         <div className="flex-grow space-y-3">
-             <h3 className="font-headline text-md font-semibold leading-tight">{criterion}</h3>
+             <h2 className="font-headline text-lg font-semibold leading-tight">{criterion}</h2>
             <div>
                 <h3 className="font-semibold text-sm text-foreground/90 mb-1">Evaluation</h3>
                 <p className="text-sm text-foreground/80">{evaluation}</p>
