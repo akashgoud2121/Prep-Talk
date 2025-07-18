@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Download, Star, FileText, FilterX, Zap, PauseCircle, TrendingUp, Rabbit, MicVocal, Hourglass } from "lucide-react";
+import { Download, Star, FileText, FilterX, Zap, PauseCircle, TrendingUp, Rabbit, MicVocal, Hourglass, BrainCircuit, Speech, BookOpen } from "lucide-react";
 import TranscriptionDisplay from "./transcription-display";
 
 interface AnalysisDashboardProps {
@@ -31,18 +31,19 @@ const MetricCard = ({
   icon: React.ElementType;
 }) => (
   <Card className="bg-secondary/30">
-    <CardHeader className="pb-2">
-      <CardDescription className="flex items-center gap-2 text-muted-foreground">
-        <Icon className="h-4 w-4" />
-        <span>{title}</span>
-      </CardDescription>
-      <CardTitle className="text-3xl font-bold font-headline pl-6">
-        {value}
-        {unit && <span className="text-xl font-medium text-muted-foreground ml-1">{unit}</span>}
-      </CardTitle>
+    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <CardTitle className="text-sm font-medium">{title}</CardTitle>
+      <Icon className="h-4 w-4 text-muted-foreground" />
     </CardHeader>
+    <CardContent>
+      <div className="text-2xl font-bold">
+        {value}
+        {unit && <span className="text-xs font-normal text-muted-foreground ml-1">{unit}</span>}
+      </div>
+    </CardContent>
   </Card>
 );
+
 
 const EvaluationCard = ({
   criterion,
@@ -78,11 +79,25 @@ const EvaluationCard = ({
   </Card>
 );
 
+const categoryIcons: Record<string, React.ElementType> = {
+    "Delivery": Speech,
+    "Language": BookOpen,
+    "Content": BrainCircuit,
+};
+
+
 export default function AnalysisDashboard({
   data,
   onDownloadPDF,
 }: AnalysisDashboardProps) {
   const { metadata, evaluationCriteria, totalScore, overallAssessment, highlightedTranscription } = data;
+
+  const groupedCriteria = evaluationCriteria.reduce((acc, criterion) => {
+    const category = criterion.category;
+    if (!acc[category]) acc[category] = [];
+    acc[category].push(criterion);
+    return acc;
+  }, {} as Record<string, typeof evaluationCriteria>);
 
   return (
     <div className="w-full space-y-8">
@@ -132,22 +147,31 @@ export default function AnalysisDashboard({
             <MetricCard title="Pause Time" value={metadata.pausePercentage.toFixed(1)} unit="%" icon={Hourglass} />
         </div>
       </div>
-
-      <div className="space-y-4">
-        <h2 className="font-headline text-2xl font-semibold">
-            Detailed Feedback
-        </h2>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {evaluationCriteria.map((item, index) => (
-                <EvaluationCard 
+      
+       <div className="space-y-8">
+        <h2 className="font-headline text-2xl font-semibold">Detailed Feedback</h2>
+        {Object.entries(groupedCriteria).map(([category, items]) => {
+          const CategoryIcon = categoryIcons[category] || Star;
+          return (
+            <div key={category} className="space-y-4">
+              <div className="flex items-center gap-3">
+                 <CategoryIcon className="h-6 w-6 text-primary" />
+                 <h3 className="font-headline text-xl font-semibold">{category}</h3>
+              </div>
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {items.map((item, index) => (
+                  <EvaluationCard
                     key={index}
                     criterion={item.criteria}
                     score={item.score}
                     evaluation={item.evaluation}
                     feedback={item.feedback}
-                />
-            ))}
-        </div>
+                  />
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

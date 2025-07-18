@@ -49,7 +49,7 @@ export const generatePdfReport = (data: AnalyzeSpeechOutput): void => {
   doc.text(assessmentLines, margin, y);
   y += assessmentLines.length * line_height + line_height;
 
-  if (highlightedTranscription) {
+  if (highlightedTranscription && highlightedTranscription.length > 0) {
     checkY(line_height * 3);
     doc.addPage();
     y = margin;
