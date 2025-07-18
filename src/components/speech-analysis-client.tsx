@@ -14,9 +14,8 @@ import AnalysisDashboard from "@/components/analysis-dashboard";
 import EmptyState from "@/components/empty-state";
 import { generatePdfReport } from "@/lib/pdf";
 import { cn } from "@/lib/utils";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { SectionTitle } from "./section-title";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 
@@ -30,14 +29,20 @@ interface CustomSpeechRecognition extends SpeechRecognition {
 }
 
 const PresentationIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-3 h-8 w-8"><path d="M2 3h20"></path><path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3"></path><path d="m7 21 5-5 5 5"></path></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-3 h-6 w-6"><path d="M2 3h20"></path><path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3"></path><path d="m7 21 5-5 5 5"></path></svg>
 );
 const InterviewIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-3 h-8 w-8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><path d="M8 12a2 2 0 0 0 2-2V8H8"></path><path d="M14 12a2 2 0 0 0 2-2V8h-2"></path></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-3 h-6 w-6"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><path d="M8 12a2 2 0 0 0 2-2V8H8"></path><path d="M14 12a2 2 0 0 0 2-2V8h-2"></path></svg>
 );
 const PracticeIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-3 h-8 w-8"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><path d="m9 14 2 2 4-4"></path></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-3 h-6 w-6"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><path d="m9 14 2 2 4-4"></path></svg>
 );
+
+const modeDescriptions: Record<AnalysisMode, string> = {
+    "Presentation Mode": "In Presentation Mode, your speech will be evaluated for general clarity, structure, and engagement.",
+    "Interview Mode": "In Interview Mode, the AI will assess how well you answer the specific interview question, focusing on relevance and confidence.",
+    "Practice Mode": "In Practice Mode, your answer will be compared against the 'perfect answer' you provide, with feedback on bridging the gaps."
+};
 
 export default function SpeechAnalysisClient() {
   const [mode, setMode] = useState<AnalysisMode>("Presentation Mode");
@@ -229,133 +234,161 @@ export default function SpeechAnalysisClient() {
   
   return (
     <div className="w-full max-w-5xl space-y-8">
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:items-start">
-        <div className="space-y-4">
-          <SectionTitle number="1" title="Provide your speech" />
-          <Card className="rounded-lg border shadow-sm">
-            <CardContent className="p-4">
-              <Tabs value={currentTab} onValueChange={(v) => { clearAudio(); setTranscript(""); setCurrentTab(v); }} className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="live">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" x2="12" y1="19" y2="22"></line></svg>
-                    Live
-                  </TabsTrigger>
-                  <TabsTrigger value="record">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M2 10v3"></path><path d="M6 6v11"></path><path d="M10 3v18"></path><path d="M14 8v7"></path><path d="M18 5v13"></path><path d="M22 10v3"></path></svg>
-                    Record
-                  </TabsTrigger>
-                  <TabsTrigger value="upload">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" x2="12" y1="3" y2="15"></line></svg>
-                    Upload
-                  </TabsTrigger>
-                </TabsList>
-                <TabsContent value="live" className="mt-4">
-                   <Textarea
-                      placeholder="Check your audio transcription..."
-                      value={transcript}
-                      onChange={(e) => setTranscript(e.target.value)}
-                      className="h-40 bg-background"
-                      readOnly={isListening}
-                    />
-                    <Button onClick={handleToggleListening} className="w-full mt-4" disabled={!isSpeechRecognitionSupported}>
-                      <Mic className="mr-2" />
-                      {isListening ? "Stop live transcription" : "Start live transcription"}
-                    </Button>
-                </TabsContent>
-                <TabsContent value="record" className="mt-4">
-                   {audioURL ? (
-                     <div className="space-y-4">
-                        <audio controls src={audioURL} className="w-full"></audio>
-                        <Button onClick={clearAudio} variant="outline" className="w-full"><X className="mr-2" /> Clear Recording</Button>
-                      </div>
-                   ) : (
-                    <div className="flex flex-col items-center justify-center space-y-4 rounded-md border border-dashed bg-background h-48">
-                      <p className="text-sm text-muted-foreground">{isRecording ? "Recording in progress..." : "Click button to start recording"}</p>
-                      <Button onClick={handleToggleRecording} variant={isRecording ? "destructive" : "default"} size="lg">
-                        <Mic className="mr-2" />
-                        {isRecording ? "Stop Recording" : "Start Recording"}
-                      </Button>
-                    </div>
-                   )}
-                </TabsContent>
-                <TabsContent value="upload" className="mt-4">
-                    {audioURL ? (
-                       <div className="space-y-4">
-                          <audio controls src={audioURL} className="w-full"></audio>
-                          <Button onClick={clearAudio} variant="outline" className="w-full"><X className="mr-2" /> Clear Selection</Button>
-                        </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center space-y-2 rounded-md border border-dashed bg-background h-48">
-                        <Upload className="h-8 w-8 text-muted-foreground"/>
-                        <p className="text-sm text-muted-foreground">Select an audio file</p>
-                        <Button asChild size="sm">
-                          <label htmlFor="audio-upload">
-                            Browse Files
-                            <input id="audio-upload" type="file" accept="audio/*" onChange={handleFileChange} className="hidden" ref={fileInputRef}/>
-                          </label>
-                        </Button>
-                      </div>
-                    )}
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <div className="flex items-start gap-4">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-lg flex-shrink-0 mt-1">1</div>
+            <div className="w-full">
+                <h2 className="text-2xl font-headline font-semibold mb-4">Provide Your Speech</h2>
+                 <Card className="rounded-lg border shadow-lg bg-card/50 overflow-hidden">
+                    <Tabs value={currentTab} onValueChange={(v) => { clearAudio(); setTranscript(""); setCurrentTab(v); }} className="w-full">
+                        <CardHeader className="p-4 border-b">
+                            <TabsList className="grid w-full grid-cols-3">
+                            <TabsTrigger value="live">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" x2="12" y1="19" y2="22"></line></svg>
+                                Live
+                            </TabsTrigger>
+                            <TabsTrigger value="record">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M2 10v3"></path><path d="M6 6v11"></path><path d="M10 3v18"></path><path d="M14 8v7"></path><path d="M18 5v13"></path><path d="M22 10v3"></path></svg>
+                                Record
+                            </TabsTrigger>
+                            <TabsTrigger value="upload">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" x2="12" y1="3" y2="15"></line></svg>
+                                Upload
+                            </TabsTrigger>
+                            </TabsList>
+                        </CardHeader>
+                        <TabsContent value="live">
+                            <CardContent className="p-4">
+                                <Textarea
+                                placeholder="Your transcribed speech will appear here..."
+                                value={transcript}
+                                onChange={(e) => setTranscript(e.target.value)}
+                                className="h-48 resize-none bg-secondary/50 border-dashed"
+                                readOnly={isListening}
+                                />
+                            </CardContent>
+                            <div className="flex items-center p-4 bg-muted/50">
+                                <Button onClick={handleToggleListening} className="w-full" size="lg" disabled={!isSpeechRecognitionSupported}>
+                                    <Mic className="mr-2 h-5 w-5" />
+                                    {isListening ? "Stop live transcription" : "Start live transcription"}
+                                </Button>
+                            </div>
+                        </TabsContent>
+                         <TabsContent value="record">
+                            <CardContent className="p-4">
+                                {audioURL ? (
+                                    <div className="space-y-4">
+                                        <audio controls src={audioURL} className="w-full"></audio>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center space-y-4 rounded-md border border-dashed bg-background h-48">
+                                        <p className="text-sm text-muted-foreground">{isRecording ? "Recording in progress..." : "Click button to start recording"}</p>
+                                    </div>
+                                )}
+                            </CardContent>
+                            <div className="flex items-center p-4 bg-muted/50">
+                                 {audioURL ? (
+                                    <Button onClick={clearAudio} variant="outline" className="w-full" size="lg"><X className="mr-2" /> Clear Recording</Button>
+                                ) : (
+                                    <Button onClick={handleToggleRecording} variant={isRecording ? "destructive" : "default"} size="lg" className="w-full">
+                                        <Mic className="mr-2 h-5 w-5" />
+                                        {isRecording ? "Stop Recording" : "Start Recording"}
+                                    </Button>
+                                )}
+                           </div>
+                         </TabsContent>
+                         <TabsContent value="upload">
+                            <CardContent className="p-4">
+                                {audioURL ? (
+                                <div className="space-y-4">
+                                    <audio controls src={audioURL} className="w-full"></audio>
+                                    </div>
+                                ) : (
+                                <div className="flex flex-col items-center justify-center space-y-2 rounded-md border border-dashed bg-background h-48">
+                                    <Upload className="h-8 w-8 text-muted-foreground"/>
+                                    <p className="text-sm text-muted-foreground">Select an audio file</p>
+                                </div>
+                                )}
+                            </CardContent>
+                             <div className="flex items-center p-4 bg-muted/50">
+                                {audioURL ? (
+                                    <Button onClick={clearAudio} variant="outline" className="w-full" size="lg"><X className="mr-2" /> Clear Selection</Button>
+                                ) : (
+                                    <Button asChild size="lg" className="w-full">
+                                    <label htmlFor="audio-upload">
+                                        <Upload className="mr-2 h-5 w-5" />
+                                        Browse Files
+                                        <input id="audio-upload" type="file" accept="audio/*" onChange={handleFileChange} className="hidden" ref={fileInputRef}/>
+                                    </label>
+                                    </Button>
+                                )}
+                            </div>
+                         </TabsContent>
+                    </Tabs>
+                </Card>
+            </div>
         </div>
 
-        <div className="space-y-4">
-            <SectionTitle number="2" title="Set Analysis Context" />
-            <Card className="rounded-lg border shadow-sm">
-                <CardContent className="p-4 space-y-4">
-                    <RadioGroup
-                      value={mode}
-                      onValueChange={(v: any) => setMode(v)}
-                      className="grid grid-cols-1 sm:grid-cols-3 gap-2"
-                    >
-                      <div>
-                        <RadioGroupItem value="Presentation Mode" id="presentation-mode" className="sr-only peer" />
-                        <Label htmlFor="presentation-mode" className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground font-semibold text-center">
-                          <PresentationIcon />
-                          Presentation
-                        </Label>
-                      </div>
-                      <div>
-                        <RadioGroupItem value="Interview Mode" id="interview-mode" className="sr-only peer" />
-                        <Label htmlFor="interview-mode" className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground font-semibold text-center">
-                          <InterviewIcon />
-                          Interview
-                        </Label>
-                      </div>
-                      <div>
-                        <RadioGroupItem value="Practice Mode" id="practice-mode" className="sr-only peer" />
-                        <Label htmlFor="practice-mode" className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground font-semibold text-center">
-                          <PracticeIcon />
-                          Practice
-                        </Label>
-                      </div>
-                    </RadioGroup>
-                    
-                    <div className="transition-all duration-300 ease-in-out">
-                    {(mode === "Interview Mode" || mode === "Practice Mode") && (
-                        <Textarea
-                          id="question"
-                          value={question}
-                          onChange={(e) => setQuestion(e.target.value)}
-                          placeholder="Enter the interview question here... e.g., Tell me about yourself."
-                          className="bg-background mt-4"
-                        />
-                    )}
-                    {mode === "Practice Mode" && (
-                        <Textarea
-                          id="perfect-answer"
-                          value={perfectAnswer}
-                          onChange={(e) => setPerfectAnswer(e.target.value)}
-                          placeholder="Provide an ideal or 'perfect' answer for comparison."
-                          className="bg-background mt-4"
-                        />
-                    )}
-                    </div>
-                </CardContent>
-            </Card>
+         <div className="flex items-start gap-4">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-lg flex-shrink-0 mt-1">2</div>
+            <div className="w-full">
+                 <h2 className="text-2xl font-headline font-semibold mb-4">Set Analysis Context</h2>
+                 <Card className="rounded-lg border shadow-lg bg-card/50">
+                    <CardContent className="p-6 space-y-6">
+                        <RadioGroup
+                          value={mode}
+                          onValueChange={(v: any) => setMode(v)}
+                          className="grid grid-cols-1 sm:grid-cols-3 gap-4"
+                        >
+                          <div>
+                            <RadioGroupItem value="Presentation Mode" id="presentation-mode" className="sr-only peer" />
+                            <Label htmlFor="presentation-mode" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground font-semibold text-center">
+                              <PresentationIcon />
+                              Presentation
+                            </Label>
+                          </div>
+                          <div>
+                            <RadioGroupItem value="Interview Mode" id="interview-mode" className="sr-only peer" />
+                            <Label htmlFor="interview-mode" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground font-semibold text-center">
+                              <InterviewIcon />
+                              Interview
+                            </Label>
+                          </div>
+                          <div>
+                            <RadioGroupItem value="Practice Mode" id="practice-mode" className="sr-only peer" />
+                            <Label htmlFor="practice-mode" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground font-semibold text-center">
+                              <PracticeIcon />
+                              Practice
+                            </Label>
+                          </div>
+                        </RadioGroup>
+                        
+                        <div className="transition-all duration-300 ease-in-out">
+                            <div className="text-sm text-center text-muted-foreground p-4 bg-secondary/30 rounded-md h-full flex items-center justify-center">
+                               <p>{modeDescriptions[mode]}</p>
+                            </div>
+                            {(mode === "Interview Mode" || mode === "Practice Mode") && (
+                                <Textarea
+                                  id="question"
+                                  value={question}
+                                  onChange={(e) => setQuestion(e.target.value)}
+                                  placeholder="Enter the interview question here... e.g., Tell me about yourself."
+                                  className="bg-background mt-4"
+                                />
+                            )}
+                            {mode === "Practice Mode" && (
+                                <Textarea
+                                  id="perfect-answer"
+                                  value={perfectAnswer}
+                                  onChange={(e) => setPerfectAnswer(e.target.value)}
+                                  placeholder="Provide an ideal or 'perfect' answer for comparison."
+                                  className="bg-background mt-4"
+                                />
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
         </div>
       </div>
 
