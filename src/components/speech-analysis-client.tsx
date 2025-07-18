@@ -43,19 +43,19 @@ const modeOptions = [
         value: "Presentation Mode", 
         icon: PresentationIcon, 
         title: "Presentation",
-        description: "Evaluates general clarity, structure, and engagement for public speaking.",
+        description: "General-purpose analysis of structure, clarity, and engagement.",
     },
     { 
         value: "Interview Mode",
         icon: InterviewIcon,
         title: "Interview",
-        description: "Assesses how well you answer a specific interview question.",
+        description: "Focused feedback on how well you answer a specific question.",
     },
     {
         value: "Practice Mode",
         icon: PracticeIcon,
         title: "Practice",
-        description: "Compares your answer against a 'perfect answer' you provide.",
+        description: "Compares your answer against a 'perfect' answer you provide.",
     }
 ];
 
@@ -261,7 +261,7 @@ export default function SpeechAnalysisClient() {
   
   return (
     <div className="w-full max-w-7xl space-y-8">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+      <div className="space-y-12">
         <div className="flex items-start gap-4">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-lg flex-shrink-0 mt-1">1</div>
             <div className="w-full">
@@ -316,12 +316,12 @@ export default function SpeechAnalysisClient() {
                             <div className="flex items-center p-4 bg-muted/50">
                                  {audioURL ? (
                                     <Button onClick={clearAudio} variant="outline" className="w-full" size="lg"><X className="mr-2" /> Clear Recording</Button>
-                                ) : (
+                                 ) : (
                                     <Button onClick={handleToggleRecording} variant={isRecording ? "destructive" : "default"} size="lg" className="w-full">
                                         <Mic className="mr-2 h-5 w-5" />
                                         {isRecording ? "Stop Recording" : "Start Recording"}
                                     </Button>
-                                )}
+                                 )}
                            </div>
                          </TabsContent>
                          <TabsContent value="upload">
@@ -363,26 +363,25 @@ export default function SpeechAnalysisClient() {
                  <RadioGroup
                     value={mode}
                     onValueChange={(v: any) => setMode(v)}
-                    className="grid grid-cols-1 gap-4"
+                    className="grid grid-cols-1 md:grid-cols-3 gap-4"
                  >
                     {modeOptions.map(option => {
                         const isSelected = mode === option.value;
                         return (
-                             <Label key={option.value} htmlFor={option.value} className={cn(
-                                "block rounded-lg border-2 p-4 cursor-pointer transition-all duration-200",
-                                isSelected ? "border-primary bg-primary/5 shadow-lg" : "border-border bg-card/50 hover:border-primary/50"
-                             )}>
-                                <div className="flex items-center gap-4">
-                                    <RadioGroupItem value={option.value} id={option.value} className="h-5 w-5" />
-                                    <div className={cn("flex h-10 w-10 items-center justify-center rounded-lg flex-shrink-0", isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
-                                        <option.icon />
-                                    </div>
-                                    <div className="w-full">
-                                        <h3 className="font-headline text-md font-semibold mb-1">{option.title}</h3>
-                                        <p className="text-muted-foreground text-sm">{option.description}</p>
-                                    </div>
-                                </div>
-                             </Label>
+                            <div key={option.value}>
+                                 <RadioGroupItem value={option.value} id={option.value} className="peer sr-only" />
+                                 <Label 
+                                    htmlFor={option.value} 
+                                    className={cn(
+                                        "flex flex-col items-center justify-center rounded-md border-2 bg-card p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer transition-all",
+                                        isSelected ? "border-primary shadow-md" : "border-muted"
+                                    )}
+                                >
+                                    <option.icon />
+                                    <span className="font-bold text-center">{option.title}</span>
+                                    <span className="text-sm text-center text-muted-foreground mt-1">{option.description}</span>
+                                 </Label>
+                             </div>
                         )
                     })}
                  </RadioGroup>
@@ -449,4 +448,3 @@ export default function SpeechAnalysisClient() {
     </div>
   );
 }
-
