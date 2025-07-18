@@ -110,11 +110,11 @@ const EvaluationCard = ({
         <div className="flex-grow space-y-3">
              <h3 className="font-headline text-md font-semibold leading-tight">{criterion}</h3>
             <div>
-                <h4 className="font-semibold text-sm text-foreground/90 mb-1">Evaluation</h4>
+                <h3 className="font-semibold text-sm text-foreground/90 mb-1">Evaluation</h3>
                 <p className="text-sm text-foreground/80">{evaluation}</p>
             </div>
             <div>
-                <h4 className="font-semibold text-sm text-foreground/90 mb-1">Feedback</h4>
+                <h3 className="font-semibold text-sm text-foreground/90 mb-1">Feedback</h3>
                 <p className="text-sm text-foreground/80">{feedback}</p>
             </div>
         </div>
@@ -212,7 +212,7 @@ export default function AnalysisDashboard({
                         <AccordionTrigger className="p-6 hover:no-underline">
                             <div className="flex items-center gap-3">
                                 <CategoryIcon className="h-6 w-6 text-primary" />
-                                <h3 className="font-headline text-xl font-semibold">{category}</h3>
+                                <h2 className="font-headline text-xl font-semibold">{category}</h2>
                             </div>
                         </AccordionTrigger>
                         <AccordionContent className="p-6 pt-0">
