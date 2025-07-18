@@ -33,7 +33,7 @@ const PresentationIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-3 h-8 w-8"><path d="M2 3h20"></path><path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3"></path><path d="m7 21 5-5 5 5"></path></svg>
 );
 const InterviewIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-3 h-8 w-8"><path d="M14 16.5a4.5 4.5 0 0 0-3-4.24V10.5h2V8.62a4.502 4.502 0 0 0-4.04-4.48A4.5 4.5 0 0 0 4.5 8.5V10h2v2.26a4.5 4.5 0 0 0-3 4.24"/><path d="M19 10v10"/><path d="M19 8v.01"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-3 h-8 w-8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><path d="M8 12a2 2 0 0 0 2-2V8H8"></path><path d="M14 12a2 2 0 0 0 2-2V8h-2"></path></svg>
 );
 const PracticeIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-3 h-8 w-8"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><path d="m9 14 2 2 4-4"></path></svg>
@@ -308,24 +308,30 @@ export default function SpeechAnalysisClient() {
                 <CardContent className="p-4 space-y-4">
                     <RadioGroup
                       value={mode}
-                      onValueChange={(v: AnalysisMode) => setMode(v)}
-                      className="grid grid-cols-3 gap-2"
+                      onValueChange={(v: any) => setMode(v)}
+                      className="grid grid-cols-1 sm:grid-cols-3 gap-2"
                     >
-                      <Label htmlFor="presentation-mode" className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground font-semibold text-center">
+                      <div>
                         <RadioGroupItem value="Presentation Mode" id="presentation-mode" className="sr-only peer" />
-                        <PresentationIcon />
-                        Presentation
-                      </Label>
-                       <Label htmlFor="interview-mode" className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground font-semibold text-center">
+                        <Label htmlFor="presentation-mode" className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground font-semibold text-center">
+                          <PresentationIcon />
+                          Presentation
+                        </Label>
+                      </div>
+                      <div>
                         <RadioGroupItem value="Interview Mode" id="interview-mode" className="sr-only peer" />
-                        <InterviewIcon />
-                        Interview
-                      </Label>
-                       <Label htmlFor="practice-mode" className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground font-semibold text-center">
+                        <Label htmlFor="interview-mode" className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground font-semibold text-center">
+                          <InterviewIcon />
+                          Interview
+                        </Label>
+                      </div>
+                      <div>
                         <RadioGroupItem value="Practice Mode" id="practice-mode" className="sr-only peer" />
-                        <PracticeIcon />
-                        Practice
-                      </Label>
+                        <Label htmlFor="practice-mode" className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground font-semibold text-center">
+                          <PracticeIcon />
+                          Practice
+                        </Label>
+                      </div>
                     </RadioGroup>
                     
                     <div className="transition-all duration-300 ease-in-out">
