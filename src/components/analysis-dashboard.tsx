@@ -56,7 +56,7 @@ const ScoreCircle = ({ score }: { score: number }) => {
     const offset = circumference - (score / 10) * circumference;
     let colorClass = 'text-green-500';
     if (score < 5) colorClass = 'text-red-500';
-    else if (score < 8) colorClass = 'text-yellow-500';
+    else if (score < 8) colorClass = 'text-amber-500';
 
     return (
         <div className="relative h-16 w-16 flex-shrink-0">
@@ -110,11 +110,11 @@ const EvaluationCard = ({
         <div className="flex-grow space-y-3">
              <h3 className="font-headline text-md font-semibold leading-tight">{criterion}</h3>
             <div>
-                <h4 className="font-semibold text-xs uppercase text-muted-foreground tracking-wider mb-1">Evaluation</h4>
+                <h4 className="font-semibold text-xs uppercase text-accent-foreground tracking-wider mb-1">Evaluation</h4>
                 <p className="text-sm text-foreground/80">{evaluation}</p>
             </div>
             <div>
-                <h4 className="font-semibold text-xs uppercase text-muted-foreground tracking-wider mb-1">Feedback</h4>
+                <h4 className="font-semibold text-xs uppercase text-accent-foreground tracking-wider mb-1">Feedback</h4>
                 <p className="text-sm text-foreground/80">{feedback}</p>
             </div>
         </div>
