@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -18,8 +19,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import wav from 'wav';
-
+import wav from "wav";
 
 type AnalysisMode = "Presentation Mode" | "Interview Mode" | "Practice Mode";
 
@@ -479,3 +479,5 @@ export default function SpeechAnalysisClient() {
     </div>
   );
 }
+
+    
