@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Loader2, Mic, Upload, X } from "lucide-react";
+import { CheckCircle, Loader2, Mic, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -40,12 +40,17 @@ const ContextCard = ({
   <button
     onClick={onClick}
     className={cn(
-      "flex w-full flex-col items-center justify-center gap-2 rounded-lg border p-4 text-center transition-all",
+      "relative flex w-full flex-col items-center justify-center gap-2 rounded-lg border p-4 text-center transition-all",
       isSelected
         ? "border-primary bg-primary text-primary-foreground shadow-sm"
         : "border-border bg-muted/50 hover:bg-accent hover:text-accent-foreground"
     )}
   >
+    {isSelected && (
+        <div className="absolute top-2 right-2">
+            <CheckCircle className="h-5 w-5 text-primary-foreground" />
+        </div>
+    )}
     <div className={cn("h-8 w-8", isSelected ? 'text-primary-foreground' : 'text-muted-foreground')}>{icon}</div>
     <h3 className="font-semibold">{title}</h3>
   </button>
@@ -88,8 +93,8 @@ export default function SpeechAnalysisClient() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
       setIsSpeechRecognitionSupported(true);
-      recognitionRef.current = new SpeechRecognition() as CustomSpeechRecognition;
-      const recognition = recognitionRef.current;
+      const recognition = new SpeechRecognition() as CustomSpeechRecognition;
+      recognitionRef.current = recognition;
       recognition.continuous = true;
       recognition.interimResults = true;
       recognition.lang = "en-US";
@@ -260,15 +265,15 @@ export default function SpeechAnalysisClient() {
                 <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="live">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" x2="12" y1="19" y2="22"></line></svg>
-                    Live Transcription
+                    Live
                   </TabsTrigger>
                   <TabsTrigger value="record">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M2 10v3"></path><path d="M6 6v11"></path><path d="M10 3v18"></path><path d="M14 8v7"></path><path d="M18 5v13"></path><path d="M22 10v3"></path></svg>
-                    Record Audio
+                    Record
                   </TabsTrigger>
                   <TabsTrigger value="upload">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" x2="12" y1="3" y2="15"></line></svg>
-                    Upload File
+                    Upload
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent value="live" className="mt-4">
