@@ -40,14 +40,14 @@ const ContextCard = ({
   <button
     onClick={onClick}
     className={cn(
-      "flex w-full flex-col items-center justify-center gap-2 rounded-lg border-2 p-4 text-center transition-all",
+      "flex w-full flex-col items-center justify-center gap-2 rounded-lg border p-4 text-center transition-all",
       isSelected
-        ? "border-primary bg-primary/10 text-primary"
-        : "border-border bg-card hover:bg-accent/50 hover:border-accent"
+        ? "border-primary bg-primary text-primary-foreground shadow-sm"
+        : "border-border bg-muted/50 hover:bg-accent hover:text-accent-foreground"
     )}
   >
-    <div className={cn("h-8 w-8", isSelected ? 'text-primary' : 'text-muted-foreground')}>{icon}</div>
-    <h3 className="font-semibold text-foreground">{title}</h3>
+    <div className={cn("h-8 w-8", isSelected ? 'text-primary-foreground' : 'text-muted-foreground')}>{icon}</div>
+    <h3 className="font-semibold">{title}</h3>
   </button>
 );
 
