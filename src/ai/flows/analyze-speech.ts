@@ -82,9 +82,11 @@ const prompt = ai.definePrompt({
   name: 'analyzeSpeechPrompt',
   input: {schema: AnalyzeSpeechInputSchema},
   output: {schema: AnalyzeSpeechOutputSchema},
-  prompt: `You are a professional speech coach. Analyze the following speech sample and provide feedback on delivery, language, and content.
+  prompt: `You are a professional speech coach. Your task is to analyze a speech sample.
 
-Speech Sample: {{{speechSample}}}
+IMPORTANT: The speech sample may be provided as text OR as an audio data URI. If the 'speechSample' field contains a data URI (e.g., 'data:audio/wav;base64,...'), you MUST first transcribe the audio into text. Then, use that transcription for the analysis below. If the 'speechSample' is already text, use it directly.
+
+Speech Sample: {{media url=speechSample}}
 
 Context: {{{mode}}}
 
@@ -96,13 +98,13 @@ ${AnalyzeSpeechOutputSchema.description}\n\nFollow these instructions when gener
 - Evaluate the speech sample on ALL 15 of the following criteria: ${evaluationCriteriaEnum.options.join(', ')}.
 - For each criterion, provide a score from 0-10, a brief evaluation, actionable feedback, and a category ('Delivery', 'Language', or 'Content').
 - The totalScore is from 0 to 100, and evaluate the speech sample and context as a whole.
-- The speechRateWPM should be a number calculated from the speechSample.
-- The wordCount should be the number of words from the speechSample.
-- The fillerWordCount should be the number of filler words from the speechSample. Filler words include: like, um, uh, so, you know, actually, basically, I mean, okay, right.
-- The averagePauseDurationMs should be a number estimated from the speechSample even if it's just text.
-- The pitchVariance should be a number estimated from the speechSample even if it's just text.
-- If the speechSample is an audio data URI, the audioDurationSeconds should be a number calculated from the audio data URI.
-- The highlightedTranscription must be an array of objects. Segment the entire transcription into parts. For each part, specify if its type is 'default', 'filler' (for filler words like 'um', 'ah', 'like'), or 'pause' (for significant silences). The text for a pause should represent the pause, e.g., '[PAUSE: 1.2s]'. Concatenating all 'text' fields must reconstruct the full transcription with pause annotations. Do not leave this field empty.
+- The speechRateWPM should be a number calculated from the transcription.
+- The wordCount should be the number of words from the transcription.
+- The fillerWordCount should be the number of filler words from the transcription. Filler words include: like, um, uh, so, you know, actually, basically, I mean, okay, right.
+- The averagePauseDurationMs should be a number estimated from the transcription.
+- The pitchVariance should be a number estimated from the transcription.
+- If the speechSample was an audio data URI, the audioDurationSeconds should be a number calculated from the audio data.
+- The highlightedTranscription must be an array of objects based on the full transcription. Segment the entire transcription into parts. For each part, specify if its type is 'default', 'filler' (for filler words like 'um', 'ah', 'like'), or 'pause' (for significant silences). The text for a pause should represent the pause, e.g., '[PAUSE: 1.2s]'. Concatenating all 'text' fields must reconstruct the full transcription with pause annotations. Do not leave this field empty.
 `,
 });
 
