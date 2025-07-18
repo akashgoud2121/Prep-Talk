@@ -1,19 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Loader2, Mic, Upload, FileAudio, Download, X } from "lucide-react";
+import { Loader2, Mic, Upload, FileAudio, Download, X, Presentation, ClipboardCheck, MessageSquareQuote, WandSparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -24,6 +13,7 @@ import {
 import AnalysisDashboard from "@/components/analysis-dashboard";
 import EmptyState from "@/components/empty-state";
 import { generatePdfReport } from "@/lib/pdf";
+import { cn } from "@/lib/utils";
 
 type AnalysisMode = "Presentation Mode" | "Interview Mode" | "Practice Mode";
 
@@ -32,6 +22,41 @@ interface CustomSpeechRecognition extends SpeechRecognition {
   interimResults: boolean;
   lang: string;
 }
+
+const SectionTitle = ({ num, title }: { num: number; title: string }) => (
+  <div className="flex items-center gap-3 mb-4">
+    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold">
+      {num}
+    </div>
+    <h2 className="text-xl font-headline font-semibold">{title}</h2>
+  </div>
+);
+
+const ContextCard = ({
+  icon,
+  title,
+  isSelected,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  isSelected: boolean;
+  onClick: () => void;
+}) => (
+  <button
+    onClick={onClick}
+    className={cn(
+      "flex w-full flex-col items-center justify-center gap-2 rounded-lg border-2 p-4 text-center transition-colors",
+      isSelected
+        ? "border-primary bg-primary/10 text-primary"
+        : "border-border bg-card hover:bg-accent"
+    )}
+  >
+    {icon}
+    <span className="font-medium">{title}</span>
+  </button>
+);
+
 
 export default function SpeechAnalysisClient() {
   const [mode, setMode] = useState<AnalysisMode>("Presentation Mode");
@@ -66,14 +91,17 @@ export default function SpeechAnalysisClient() {
     recognition.interimResults = true;
     recognition.lang = "en-US";
 
+    let final_transcript = "";
     recognition.onresult = (event) => {
-      let final_transcript = "";
+      let interim_transcript = "";
       for (let i = event.resultIndex; i < event.results.length; ++i) {
         if (event.results[i].isFinal) {
           final_transcript += event.results[i][0].transcript;
+        } else {
+          interim_transcript += event.results[i][0].transcript;
         }
       }
-      setTranscript((prev) => prev + final_transcript);
+      setTranscript(final_transcript + interim_transcript);
     };
 
     recognition.onend = () => {
@@ -105,6 +133,8 @@ export default function SpeechAnalysisClient() {
         });
         mediaRecorderRef.current = new MediaRecorder(stream);
         audioChunksRef.current = [];
+        setAudioURL(null);
+        setAudioBlob(null);
         mediaRecorderRef.current.ondataavailable = (event) => {
           audioChunksRef.current.push(event.data);
         };
@@ -114,6 +144,7 @@ export default function SpeechAnalysisClient() {
           const url = URL.createObjectURL(blob);
           setAudioURL(url);
           stream.getTracks().forEach((track) => track.stop());
+          setIsRecording(false);
         };
         mediaRecorderRef.current.start();
         setIsRecording(true);
@@ -126,21 +157,22 @@ export default function SpeechAnalysisClient() {
         });
       }
     }
-    setIsRecording(!isRecording);
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      clearAudio();
       setAudioBlob(file);
       setAudioURL(URL.createObjectURL(file));
+      setCurrentTab('upload');
     }
   };
 
   const clearAudio = () => {
     setAudioBlob(null);
     setAudioURL(null);
-    if(fileInputRef.current) fileInputRef.current.value = "";
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const fileToDataUri = (file: Blob) =>
@@ -159,12 +191,12 @@ export default function SpeechAnalysisClient() {
         return;
       }
       speechSample = transcript;
-    } else if (currentTab === "record" || currentTab === "upload") {
-      if (!audioBlob) {
-        toast({ variant: "destructive", title: "No audio provided." });
-        return;
-      }
-      speechSample = await fileToDataUri(audioBlob);
+    } else if (currentTab === 'record' || currentTab === 'upload') {
+        if (!audioBlob) {
+            toast({ variant: "destructive", title: "No audio provided." });
+            return;
+        }
+        speechSample = await fileToDataUri(audioBlob);
     }
 
     if (mode === "Interview Mode" && !question) {
@@ -203,153 +235,122 @@ export default function SpeechAnalysisClient() {
       generatePdfReport(analysisResult);
     }
   }, [analysisResult]);
+  
+  const contextDescriptions: Record<AnalysisMode, string> = {
+    'Presentation Mode': 'In Presentation Mode, your speech will be evaluated for general clarity, structure, and engagement.',
+    'Interview Mode': 'In Interview Mode, your speech will be evaluated based on how well you answer the provided interview question.',
+    'Practice Mode': 'In Practice Mode, your speech will be compared against the provided "perfect answer" for accuracy and completeness.'
+  }
+
+  const renderInputArea = () => {
+    if (audioURL) {
+      return (
+         <div className="space-y-4">
+            <audio controls src={audioURL} className="w-full"></audio>
+            <div className="flex gap-2">
+                <Button onClick={() => window.open(audioURL)} variant="outline" className="w-full"><Download /> Download</Button>
+                <Button onClick={clearAudio} variant="destructive" className="w-full"><X /> Clear</Button>
+            </div>
+          </div>
+      )
+    }
+
+    return (
+       <Textarea
+          placeholder="Your transcribed speech will appear here..."
+          value={transcript}
+          onChange={(e) => setTranscript(e.target.value)}
+          className="h-36 bg-input"
+          readOnly={isListening}
+        />
+    )
+  }
 
   return (
     <div className="w-full max-w-5xl space-y-8">
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-headline">
-              1. Provide Your Speech
-            </CardTitle>
-            <CardDescription>
-              Choose your preferred method to input your speech.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs
-              value={currentTab}
-              onValueChange={setCurrentTab}
-              className="w-full"
-            >
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="live">Live</TabsTrigger>
-                <TabsTrigger value="record">Record</TabsTrigger>
-                <TabsTrigger value="upload">Upload</TabsTrigger>
-              </TabsList>
-              <TabsContent value="live" className="mt-4">
-                <Textarea
-                  placeholder="Your transcribed speech will appear here..."
-                  value={transcript}
-                  onChange={(e) => setTranscript(e.target.value)}
-                  className="h-36"
-                  readOnly={isListening}
-                />
+        <div className="space-y-4">
+            <SectionTitle num={1} title="Provide Your Speech" />
+            <div className="rounded-lg border bg-card p-4 space-y-4">
+                <div className="grid grid-cols-3 gap-2 rounded-md bg-input p-1">
+                    <Button variant={currentTab === 'live' ? 'secondary' : 'ghost'} onClick={() => { setCurrentTab('live'); clearAudio(); }}><Mic className="mr-2"/>Live</Button>
+                    <Button variant={currentTab === 'record' ? 'secondary' : 'ghost'} onClick={() => setCurrentTab('record')}><WandSparkles className="mr-2" />Record</Button>
+                    <Button variant={currentTab === 'upload' ? 'secondary' : 'ghost'} asChild><label htmlFor="audio-upload" className="cursor-pointer inline-flex items-center justify-center"><Upload className="mr-2"/>Upload</label></Button>
+                    <input id="audio-upload" type="file" accept="audio/*" onChange={handleFileChange} className="hidden" ref={fileInputRef}/>
+                </div>
+                 {renderInputArea()}
+
                 <Button
-                  onClick={handleToggleListening}
-                  className="mt-4 w-full"
-                  disabled={!SpeechRecognition}
+                  onClick={currentTab === 'live' ? handleToggleListening : handleToggleRecording}
+                  className="w-full"
+                  disabled={!SpeechRecognition && currentTab === 'live'}
                 >
-                  <Mic className="mr-2 h-4 w-4" />
-                  {isListening ? "Stop Listening" : "Start Listening"}
+                  <Mic className="mr-2" />
+                  {currentTab === 'live' 
+                    ? (isListening ? "Stop Live Transcription" : "Start Live Transcription")
+                    : (isRecording ? "Stop Recording" : "Start Recording")
+                  }
                 </Button>
-                {!SpeechRecognition && <p className="text-xs text-destructive mt-2">Speech recognition is not supported by your browser.</p>}
-              </TabsContent>
-              <TabsContent value="record" className="mt-4">
-                 {audioURL ? (
-                  <div className="space-y-4">
-                    <audio controls src={audioURL} className="w-full"></audio>
-                    <div className="flex gap-2">
-                      <Button onClick={() => window.open(audioURL)} variant="outline" className="w-full"><Download className="mr-2 h-4 w-4" /> Download</Button>
-                      <Button onClick={clearAudio} variant="destructive" className="w-full"><X className="mr-2 h-4 w-4" /> Clear</Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center space-y-4 rounded-md border-dashed border-2 h-36">
-                    <Button onClick={handleToggleRecording} size="lg">
-                      <Mic className="mr-2 h-5 w-5" />
-                      {isRecording ? "Stop Recording" : "Start Recording"}
-                    </Button>
-                    {isRecording && <p className="text-sm text-muted-foreground animate-pulse">Recording...</p>}
+            </div>
+        </div>
+
+        <div className="space-y-4">
+            <SectionTitle num={2} title="Set Analysis Context" />
+            <div className="rounded-lg border bg-card p-4 space-y-4">
+                <div className="grid grid-cols-3 gap-2">
+                    <ContextCard icon={<Presentation size={24}/>} title="Presentation" isSelected={mode === 'Presentation Mode'} onClick={() => setMode('Presentation Mode')} />
+                    <ContextCard icon={<MessageSquareQuote size={24}/>} title="Interview" isSelected={mode === 'Interview Mode'} onClick={() => setMode('Interview Mode')} />
+                    <ContextCard icon={<ClipboardCheck size={24}/>} title="Practice" isSelected={mode === 'Practice Mode'} onClick={() => setMode('Practice Mode')} />
+                </div>
+                 <div className="rounded-lg bg-input p-4 text-sm text-muted-foreground">
+                    {contextDescriptions[mode]}
+                 </div>
+                {(mode === "Interview Mode" || mode === "Practice Mode") && (
+                  <div className="space-y-2">
+                    <Textarea
+                      id="question"
+                      value={question}
+                      onChange={(e) => setQuestion(e.target.value)}
+                      placeholder="e.g., Tell me about yourself."
+                      className="bg-background"
+                    />
                   </div>
                 )}
-              </TabsContent>
-              <TabsContent value="upload" className="mt-4">
-                 {audioURL && audioBlob ? (
-                  <div className="space-y-4">
-                    <audio controls src={audioURL} className="w-full"></audio>
-                    <p className="text-sm text-muted-foreground truncate">File: {audioBlob.name}</p>
-                    <Button onClick={clearAudio} variant="destructive" className="w-full"><X className="mr-2 h-4 w-4" /> Clear Audio</Button>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center space-y-2 rounded-md border-dashed border-2 h-36">
-                    <FileAudio className="h-10 w-10 text-muted-foreground" />
-                    <Label htmlFor="audio-upload" className="cursor-pointer text-primary hover:underline">
-                      Choose an audio file
-                    </Label>
-                    <Input id="audio-upload" type="file" accept="audio/*" onChange={handleFileChange} className="hidden" ref={fileInputRef}/>
-                    <p className="text-xs text-muted-foreground">MP3, WAV, etc.</p>
+                {mode === "Practice Mode" && (
+                  <div className="space-y-2">
+                    <Textarea
+                      id="perfect-answer"
+                      value={perfectAnswer}
+                      onChange={(e) => setPerfectAnswer(e.target.value)}
+                      placeholder="Provide an ideal answer for comparison."
+                      className="bg-background"
+                    />
                   </div>
                 )}
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+            </div>
+        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-headline">
-              2. Set Analysis Context
-            </CardTitle>
-            <CardDescription>
-              Provide context for a more accurate analysis.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <RadioGroup
-              value={mode}
-              onValueChange={(value) => setMode(value as AnalysisMode)}
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="Presentation Mode" id="r1" />
-                <Label htmlFor="r1">Presentation Mode</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="Interview Mode" id="r2" />
-                <Label htmlFor="r2">Interview Mode</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="Practice Mode" id="r3" />
-                <Label htmlFor="r3">Practice Mode</Label>
-              </div>
-            </RadioGroup>
-
-            {(mode === "Interview Mode" || mode === "Practice Mode") && (
-              <div className="space-y-2">
-                <Label htmlFor="question">Interview Question</Label>
-                <Input
-                  id="question"
-                  value={question}
-                  onChange={(e) => setQuestion(e.target.value)}
-                  placeholder="e.g., Tell me about yourself."
-                />
-              </div>
-            )}
-            {mode === "Practice Mode" && (
-              <div className="space-y-2">
-                <Label htmlFor="perfect-answer">Perfect Answer</Label>
-                <Textarea
-                  id="perfect-answer"
-                  value={perfectAnswer}
-                  onChange={(e) => setPerfectAnswer(e.target.value)}
-                  placeholder="Provide an ideal answer for comparison."
-                />
-              </div>
-            )}
-          </CardContent>
-        </Card>
       </div>
 
       <div className="flex justify-center">
         <Button onClick={handleAnalyze} size="lg" disabled={isLoading}>
-          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {isLoading ? "Analyzing..." : "Analyze My Speech"}
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Analyzing...
+            </>
+          ) : (
+             <>
+              <WandSparkles className="mr-2" />
+               Analyze My Speech
+             </>
+          )}
         </Button>
       </div>
 
       <div className="mt-8 w-full">
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-12">
+          <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border p-12">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
             <p className="mt-4 text-muted-foreground">
               AI is analyzing your speech...
