@@ -1,0 +1,43 @@
+diff --git a/node_modules/wav/lib/file-writer.js b/node_modules/wav/lib/file-writer.js
+index 0c61148..2d27771 100644
+--- a/node_modules/wav/lib/file-writer.js
++++ b/node_modules/wav/lib/file-writer.js
+@@ -1,9 +1,8 @@
+ /**
+  * A Writable stream that writes a WAV file.
+  *
+- * @param {String} path The path to the WAV file to create.
+  * @param {Object} opts The options object.
+  */
+-var fs = require('fs');
+-var Writer = require('./writer');
+-var inherits = require('util').inherits;
++var Writer = require("./writer");
++var inherits = require("util").inherits;
+ 
+ /**
+  * The `FileWriter` class.
+@@ -11,9 +10,13 @@ var inherits = require('util').inherits;
+  * inherits from `Writer`.
+  */
+ 
+-function FileWriter (path, opts) {
+-  if (!(this instanceof FileWriter)) {
+-    return new FileWriter(path, opts);
++function FileWriter(path, opts) {
++  if (typeof path === "object") {
++    opts = path;
++    path = null;
++  }
++  if (!(this instanceof FileWriter) && !path) {
++    return new FileWriter(path || opts, opts);
+   }
+   Writer.call(this, opts);
+-  this.path = path;
+-  this.file = fs.createWriteStream(path, { flags: 'w' });
+-  this.file.on('error', this.emit.bind(this, 'error'));
+-  this.pipe(this.file);
+ }
++
+ inherits(FileWriter, Writer);
++module.exports = FileWriter;
