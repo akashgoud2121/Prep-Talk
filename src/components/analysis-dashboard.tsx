@@ -110,11 +110,11 @@ const EvaluationCard = ({
         <div className="flex-grow space-y-3">
              <h3 className="font-headline text-md font-semibold leading-tight">{criterion}</h3>
             <div>
-                <h4 className="font-semibold text-xs uppercase text-accent-foreground tracking-wider mb-1">Evaluation</h4>
+                <h4 className="font-semibold text-sm text-foreground/90 mb-1">Evaluation</h4>
                 <p className="text-sm text-foreground/80">{evaluation}</p>
             </div>
             <div>
-                <h4 className="font-semibold text-xs uppercase text-accent-foreground tracking-wider mb-1">Feedback</h4>
+                <h4 className="font-semibold text-sm text-foreground/90 mb-1">Feedback</h4>
                 <p className="text-sm text-foreground/80">{feedback}</p>
             </div>
         </div>
