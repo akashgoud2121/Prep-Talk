@@ -1,7 +1,7 @@
 export default function EmptyState() {
   return (
     <section className="space-y-6 pt-12 max-w-7xl mx-auto">
-      <div className="flex flex-col items-center justify-center rounded-lg h-full text-center bg-secondary p-8">
+      <div className="flex flex-col items-center justify-center rounded-lg h-full text-center bg-secondary p-16">
       <svg
         xmlns="http://www.w3.org/2000/svg"
         width="24"
