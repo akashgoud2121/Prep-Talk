@@ -97,11 +97,13 @@ const EvaluationCard = ({
   criterion,
   score,
   evaluation,
+  comparison,
   feedback,
 }: {
   criterion: string;
   score: number;
   evaluation: string;
+  comparison?: string;
   feedback: string;
 }) => (
   <Card className="flex flex-col bg-card/50 shadow-sm transition-transform hover:scale-[1.02] hover:shadow-lg w-full">
@@ -113,6 +115,12 @@ const EvaluationCard = ({
                 <h3 className="font-semibold text-sm text-foreground/90 mb-1">Evaluation</h3>
                 <p className="text-sm text-foreground/80">{evaluation}</p>
             </div>
+            {comparison && (
+               <div>
+                    <h3 className="font-semibold text-sm text-foreground/90 mb-1">Comparison</h3>
+                    <p className="text-sm text-foreground/80">{comparison}</p>
+                </div>
+            )}
             <div>
                 <h3 className="font-semibold text-sm text-foreground/90 mb-1">Feedback</h3>
                 <p className="text-sm text-foreground/80">{feedback}</p>
@@ -223,6 +231,7 @@ export default function AnalysisDashboard({
                                         criterion={item.criteria}
                                         score={item.score}
                                         evaluation={item.evaluation}
+                                        comparison={item.comparison}
                                         feedback={item.feedback}
                                     />
                                 ))}
