@@ -22,6 +22,20 @@ import { Label } from "@/components/ui/label";
 type AnalysisMode = "Presentation Mode" | "Interview Mode" | "Practice Mode";
 
 // Define types for the SpeechRecognition API to fix TypeScript errors
+interface SpeechRecognitionResult {
+  isFinal: boolean;
+  [key: number]: SpeechRecognitionAlternative;
+}
+
+interface SpeechRecognitionAlternative {
+  transcript: string;
+}
+
+interface SpeechRecognitionResultList {
+  [key: number]: SpeechRecognitionResult;
+  length: number;
+}
+
 interface SpeechRecognitionEvent extends Event {
   results: SpeechRecognitionResultList;
   resultIndex: number;
