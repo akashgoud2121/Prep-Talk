@@ -21,10 +21,27 @@ import { Label } from "@/components/ui/label";
 
 type AnalysisMode = "Presentation Mode" | "Interview Mode" | "Practice Mode";
 
-interface CustomSpeechRecognition extends SpeechRecognition {
+// Define types for the SpeechRecognition API to fix TypeScript errors
+interface SpeechRecognitionEvent extends Event {
+  results: SpeechRecognitionResultList;
+  resultIndex: number;
+}
+
+interface CustomSpeechRecognition extends EventTarget {
   continuous: boolean;
   interimResults: boolean;
   lang: string;
+  start: () => void;
+  stop: () => void;
+  onresult: (event: SpeechRecognitionEvent) => void;
+  onend: () => void;
+}
+
+declare global {
+  interface Window {
+    SpeechRecognition: new () => CustomSpeechRecognition;
+    webkitSpeechRecognition: new () => CustomSpeechRecognition;
+  }
 }
 
 const PresentationIcon = () => (
@@ -84,14 +101,14 @@ export default function SpeechAnalysisClient() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
       setIsSpeechRecognitionSupported(true);
-      const recognition = new SpeechRecognition() as CustomSpeechRecognition;
+      const recognition = new SpeechRecognition();
       recognitionRef.current = recognition;
       recognition.continuous = true;
       recognition.interimResults = true;
       recognition.lang = "en-US";
 
       let final_transcript = "";
-      recognition.onresult = (event) => {
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
         let interim_transcript = "";
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           if (event.results[i].isFinal) {
@@ -458,3 +475,5 @@ export default function SpeechAnalysisClient() {
     </div>
   );
 }
+
+    
