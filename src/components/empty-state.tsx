@@ -32,7 +32,7 @@ export default function EmptyState() {
           Your analysis dashboard will appear here.
         </p>
         <p className="text-muted-foreground">
-          Record your speech and click "Analyze" to get started.
+          Record your speech and click &quot;Analyze&quot; to get started.
         </p>
       </div>
     </section>

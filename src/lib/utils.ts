@@ -7,8 +7,8 @@ export function cn(...inputs: ClassValue[]) {
 
 // Custom browser-safe WAV encoder
 export function encodeWAV(samples: Float32Array[], sampleRate: number): Blob {
-  let buffer = new ArrayBuffer(44 + samples.length * 2 * samples[0].length);
-  let view = new DataView(buffer);
+  const buffer = new ArrayBuffer(44 + samples.length * 2 * samples[0].length);
+  const view = new DataView(buffer);
   
   const writeString = (view: DataView, offset: number, string: string) => {
     for (let i = 0; i < string.length; i++) {
@@ -19,7 +19,7 @@ export function encodeWAV(samples: Float32Array[], sampleRate: number): Blob {
   const floatTo16BitPCM = (output: DataView, offset: number, input: Float32Array[]) => {
     for (let i = 0; i < input.length; i++) {
       for (let j = 0; j < input[i].length; j++) {
-        let s = Math.max(-1, Math.min(1, input[i][j]));
+        const s = Math.max(-1, Math.min(1, input[i][j]));
         output.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
         offset += 2;
       }

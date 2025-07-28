@@ -54,7 +54,7 @@ interface CustomSpeechRecognition extends EventTarget {
   lang: string;
   maxAlternatives: number;
   serviceURI: string;
-  grammars: any;
+  grammars: SpeechGrammarList;
   
   // Methods
   start(): void;
@@ -73,6 +73,18 @@ interface CustomSpeechRecognition extends EventTarget {
   onaudiostart: (() => void) | null;
   onaudioend: (() => void) | null;
   onnomatch: ((event: SpeechRecognitionEvent) => void) | null;
+}
+
+interface SpeechGrammar {
+    src: string;
+    weight: number;
+}
+interface SpeechGrammarList {
+    length: number;
+    addFromString(string: string, weight?: number): void;
+    addFromURI(src: string, weight?: number): void;
+    item(index: number): SpeechGrammar;
+    [index: number]: SpeechGrammar;
 }
 
 declare global {
