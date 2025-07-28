@@ -19,6 +19,17 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      // Exclude server-side packages from the client-side bundle
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        '@opentelemetry/exporter-jaeger': false,
+        'handlebars': false,
+      };
+    }
+    return config;
+  },
 };
 
 export default nextConfig;
