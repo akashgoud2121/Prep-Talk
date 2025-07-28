@@ -29,6 +29,7 @@ interface SpeechRecognitionResult {
 
 interface SpeechRecognitionAlternative {
   transcript: string;
+  confidence: number;
 }
 
 interface SpeechRecognitionResultList {
@@ -41,14 +42,37 @@ interface SpeechRecognitionEvent extends Event {
   resultIndex: number;
 }
 
+interface SpeechRecognitionErrorEvent extends Event {
+  error: string;
+  message: string;
+}
+
 interface CustomSpeechRecognition extends EventTarget {
+  // Properties
   continuous: boolean;
   interimResults: boolean;
   lang: string;
-  start: () => void;
-  stop: () => void;
-  onresult: (event: SpeechRecognitionEvent) => void;
-  onend: () => void;
+  maxAlternatives: number;
+  serviceURI: string;
+  grammars: any;
+  
+  // Methods
+  start(): void;
+  stop(): void;
+  abort(): void;
+  
+  // Event handlers
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onend: (() => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+  onstart: (() => void) | null;
+  onspeechstart: (() => void) | null;
+  onspeechend: (() => void) | null;
+  onsoundstart: (() => void) | null;
+  onsoundend: (() => void) | null;
+  onaudiostart: (() => void) | null;
+  onaudioend: (() => void) | null;
+  onnomatch: ((event: SpeechRecognitionEvent) => void) | null;
 }
 
 declare global {
@@ -138,6 +162,16 @@ export default function SpeechAnalysisClient() {
         setIsListening(false);
       };
 
+      recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+        toast({
+          variant: "destructive",
+          title: "Speech Recognition Error",
+          description: `Error: ${event.error}`,
+        });
+      };
+
       return () => {
         if (recognitionRef.current) {
           recognitionRef.current.stop();
@@ -146,15 +180,15 @@ export default function SpeechAnalysisClient() {
     } else {
       console.warn("SpeechRecognition API is not supported in this browser.");
     }
-  }, []);
+  }, [toast]);
 
   const handleToggleListening = () => {
     if (!recognitionRef.current) return;
     if (isListening) {
-      recognitionRef.current?.stop();
+      recognitionRef.current.stop();
     } else {
       setTranscript("");
-      recognitionRef.current?.start();
+      recognitionRef.current.start();
     }
     setIsListening(!isListening);
   };
@@ -271,8 +305,7 @@ export default function SpeechAnalysisClient() {
       
       const result = await analyzeSpeech(input);
       setAnalysisResult(result);
-    } catch (error)
- {
+    } catch (error) {
       console.error("Analysis failed:", error);
       toast({
         variant: "destructive",
