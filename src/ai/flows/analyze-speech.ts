@@ -104,7 +104,13 @@ const prompt = ai.definePrompt({
   
   Return your answer as a valid JSON object following this schema exactly (do not include any extra text).
 
-  Speech Sample (Candidate's Answer): {{media url=speechSample}}
+  Speech Sample (Candidate's Answer):
+  {{#if (startsWith speechSample "data:audio")}}
+  {{media url=speechSample}}
+  {{else}}
+  {{{speechSample}}}
+  {{/if}}
+
   Context: {{{mode}}}
   {{~#if question}}Question: {{{question}}}{{/if}}
   {{~#if perfectAnswer}}Perfect Answer: {{{perfectAnswer}}}{{/if}}
@@ -136,3 +142,4 @@ const analyzeSpeechFlow = ai.defineFlow(
     return output!;
   }
 );
+
