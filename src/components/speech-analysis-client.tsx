@@ -1,8 +1,7 @@
-
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Loader2, Mic, Upload, X } from "lucide-react";
+import { Loader2, Mic, Upload, X, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -251,6 +250,17 @@ export default function SpeechAnalysisClient() {
     }
   };
 
+  const handleDownloadRecording = () => {
+    if (audioURL) {
+      const a = document.createElement('a');
+      a.href = audioURL;
+      a.download = 'recording.webm';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  };
+  
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -392,9 +402,12 @@ export default function SpeechAnalysisClient() {
                                         </div>
                                     )}
                                 </div>
-                                <div className="flex items-center pt-4">
+                                <div className="flex items-center pt-4 gap-4">
                                      {audioURL ? (
-                                        <Button onClick={clearAudio} variant="outline" className="w-full" size="lg"><X className="mr-2" /> Clear Recording</Button>
+                                        <>
+                                            <Button onClick={handleDownloadRecording} variant="secondary" className="w-full" size="lg"><Download className="mr-2" /> Download</Button>
+                                            <Button onClick={clearAudio} variant="outline" className="w-full" size="lg"><X className="mr-2" /> Clear</Button>
+                                        </>
                                      ) : (
                                         <Button onClick={handleToggleRecording} variant={isRecording ? "destructive" : "default"} size="lg" className="w-full">
                                             <Mic className="mr-2 h-5 w-5" />
