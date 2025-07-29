@@ -88,6 +88,7 @@ export async function analyzeSpeech(input: AnalyzeSpeechInput): Promise<AnalyzeS
 
 const prompt = ai.definePrompt({
   name: 'analyzeSpeechPrompt',
+  model: 'googleai/gemini-1.5-flash-latest',
   input: {schema: AnalyzeSpeechInputSchema.extend({ isAudio: z.boolean().optional() })},
   output: {schema: AnalyzeSpeechOutputSchema},
   prompt: `
