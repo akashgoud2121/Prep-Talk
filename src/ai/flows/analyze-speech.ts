@@ -88,7 +88,7 @@ export async function analyzeSpeech(input: AnalyzeSpeechInput): Promise<AnalyzeS
 
 const prompt = ai.definePrompt({
   name: 'analyzeSpeechPrompt',
-  input: {schema: AnalyzeSpeechInputSchema},
+  input: {schema: AnalyzeSpeechInputSchema.extend({ isAudio: z.boolean().optional() })},
   output: {schema: AnalyzeSpeechOutputSchema},
   prompt: `
   {{#if perfectAnswer}}
@@ -100,12 +100,12 @@ const prompt = ai.definePrompt({
   You are a professional speech coach. Your task is to analyze a speech sample and provide constructive feedback.
   {{/if}}
 
-  IMPORTANT: The speech sample may be provided as text OR as an audio data URI. If the 'speechSample' field contains a data URI (e.g., 'data:audio/wav;base64,...'), you MUST first transcribe the audio into text. Then, use that transcription for the analysis below. If the 'speechSample' is already text, use it directly.
+  IMPORTANT: The speech sample may be provided as text OR as an audio data URI. If it is an audio data URI you MUST first transcribe the audio into text. Then, use that transcription for the analysis below. If the 'speechSample' is already text, use it directly.
   
   Return your answer as a valid JSON object following this schema exactly (do not include any extra text).
 
   Speech Sample (Candidate's Answer):
-  {{#if (startsWith speechSample "data:audio")}}
+  {{#if isAudio}}
   {{media url=speechSample}}
   {{else}}
   {{{speechSample}}}
@@ -138,8 +138,8 @@ const analyzeSpeechFlow = ai.defineFlow(
     outputSchema: AnalyzeSpeechOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
+    const isAudio = input.speechSample.startsWith('data:audio');
+    const {output} = await prompt({...input, isAudio});
     return output!;
   }
 );
-
