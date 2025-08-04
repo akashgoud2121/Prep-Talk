@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -53,7 +54,7 @@ interface CustomSpeechRecognition extends EventTarget {
   lang: string;
   maxAlternatives: number;
   serviceURI: string;
-  grammars: SpeechGrammarList;
+  grammars: any;
   
   // Methods
   start(): void;
@@ -74,17 +75,6 @@ interface CustomSpeechRecognition extends EventTarget {
   onnomatch: ((event: SpeechRecognitionEvent) => void) | null;
 }
 
-interface SpeechGrammar {
-    src: string;
-    weight: number;
-}
-interface SpeechGrammarList {
-    length: number;
-    addFromString(string: string, weight?: number): void;
-    addFromURI(src: string, weight?: number): void;
-    item(index: number): SpeechGrammar;
-    [index: number]: SpeechGrammar;
-}
 
 declare global {
   interface Window {
@@ -547,5 +537,3 @@ export default function SpeechAnalysisClient() {
     </div>
   );
 }
-
-    
