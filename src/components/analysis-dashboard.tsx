@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Download, Star, FileText, FilterX, Zap, PauseCircle, TrendingUp, Rabbit, MicVocal, Hourglass, BrainCircuit, Speech, BookOpen } from "lucide-react";
+import { Download, Star, FileText, FilterX, Zap, PauseCircle, TrendingUp, Rabbit, MicVocal, Hourglass, BrainCircuit, Speech, BookOpen, Lightbulb } from "lucide-react";
 import TranscriptionDisplay from "./transcription-display";
 import { cn } from "@/lib/utils";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -152,7 +152,7 @@ export default function AnalysisDashboard({
   data,
   onDownloadPDF,
 }: AnalysisDashboardProps) {
-  const { metadata, evaluationCriteria, totalScore, overallAssessment, highlightedTranscription } = data;
+  const { metadata, evaluationCriteria, totalScore, overallAssessment, highlightedTranscription, suggestedSpeech } = data;
 
   const groupedCriteria = evaluationCriteria.reduce((acc, criterion) => {
     const category = criterion.category;
@@ -242,6 +242,26 @@ export default function AnalysisDashboard({
             })}
         </Accordion>
       </div>
+
+       {suggestedSpeech && (
+        <Card className="shadow-lg bg-primary/5 border border-primary/20">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <Lightbulb className="h-6 w-6 text-primary" />
+              <CardTitle className="font-headline text-2xl text-primary">
+                Suggested Delivery Example
+              </CardTitle>
+            </div>
+            <CardDescription>
+              Here's how you could rephrase or deliver your message for greater impact, based on the feedback.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-foreground/90 leading-relaxed italic">"{suggestedSpeech}"</p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
+

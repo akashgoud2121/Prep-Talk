@@ -78,6 +78,7 @@ const AnalyzeSpeechOutputSchema = z.object({
   ).describe('Detailed evaluation of the 15 specified criteria.'),
   totalScore: z.number().min(0).max(100).describe('An overall assessment that summarizes performance across all criteria (0-100).'),
   overallAssessment: z.string().describe('An overall assessment of the speech'),
+  suggestedSpeech: z.string().describe('A sample of how the speaker could have delivered their message more effectively.'),
 });
 
 export type AnalyzeSpeechOutput = z.infer<typeof AnalyzeSpeechOutputSchema>;
@@ -129,6 +130,7 @@ const prompt = ai.definePrompt({
   - The paceScore and clarityScore should be scores from 0-100 based on the analysis.
   - The pausePercentage should be the estimated percentage of total time the speaker was pausing.
   - **highlightedTranscription**: This is critical. You must meticulously segment the entire transcription. Create a segment for every single word or pause. A 'filler' type is ONLY for a single filler word (e.g., um, ah, like). A 'pause' type is for significant silences (e.g., '[PAUSE: 1.2s]'). All other words are 'default'. Concatenating all 'text' fields MUST reconstruct the full transcription with pause annotations. Do not leave this field empty. Be extremely thorough.
+  - **suggestedSpeech**: After the full analysis, provide a paragraph demonstrating how the speaker could have delivered their message more effectively, incorporating the feedback provided.
   `,
 });
 
@@ -144,3 +146,4 @@ const analyzeSpeechFlow = ai.defineFlow(
     return output!;
   }
 );
+
