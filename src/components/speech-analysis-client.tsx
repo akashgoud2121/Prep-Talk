@@ -360,6 +360,9 @@ export default function SpeechAnalysisClient() {
                             Upload
                         </TabsTrigger>
                         </TabsList>
+                        <div className="pt-2 text-center">
+                            <p className="text-xs text-muted-foreground">Note: For best results, keep recordings to ~30 seconds.</p>
+                        </div>
                     </CardHeader>
                     <div className="flex-grow">
                         <TabsContent value="live" className="h-full mt-0">
