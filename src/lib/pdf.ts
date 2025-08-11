@@ -1,9 +1,10 @@
+
 import jsPDF from "jspdf";
 import type { AnalyzeSpeechOutput } from "@/ai/flows/analyze-speech";
 
 export const generatePdfReport = (data: AnalyzeSpeechOutput): void => {
   const doc = new jsPDF();
-  const { metadata, evaluationCriteria, totalScore, overallAssessment, highlightedTranscription } = data;
+  const { metadata, evaluationCriteria, totalScore, overallAssessment, highlightedTranscription, suggestedSpeech } = data;
 
   const pageHeight =
     doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
@@ -152,6 +153,26 @@ export const generatePdfReport = (data: AnalyzeSpeechOutput): void => {
       y += feedbackLines.length * line_height + line_height / 2;
     });
   });
+
+  if (suggestedSpeech) {
+    checkY(line_height * 3);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text("Suggested Delivery Example", margin, y);
+    y += line_height;
+    doc.line(margin, y, pageWidth - margin, y);
+    y += line_height;
+
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(12);
+    const suggestedLines = doc.splitTextToSize(
+      suggestedSpeech,
+      pageWidth - margin * 2
+    );
+    checkY(suggestedLines.length * line_height);
+    doc.text(suggestedLines, margin, y);
+    y += suggestedLines.length * line_height;
+  }
 
   doc.save("verbal-insights-report.pdf");
 };
