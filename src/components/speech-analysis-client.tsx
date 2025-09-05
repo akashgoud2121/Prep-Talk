@@ -628,16 +628,7 @@ export default function SpeechAnalysisClient() {
 
                                             {resumeInfoText && (
                                                 <div className="space-y-2">
-                                                    <Label htmlFor="resume-info" className="font-semibold">2. Review Extracted Information</Label>
-                                                    <Textarea 
-                                                        id="resume-info"
-                                                        value={resumeInfoText}
-                                                        onChange={(e) => setResumeInfoText(e.target.value)}
-                                                        rows={10}
-                                                        className="bg-background text-xs font-mono"
-                                                        onClick={(e) => e.stopPropagation()}
-                                                        readOnly
-                                                    />
+                                                    <Label className="font-semibold">2. Generate Questions</Label>
                                                      <Button 
                                                         onClick={(e) => { e.stopPropagation(); handleGenerateQuestions(); }} 
                                                         className="w-full" 
@@ -647,7 +638,7 @@ export default function SpeechAnalysisClient() {
                                                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                                                 Generating...
                                                                 </>
-                                                            ) : "Generate Questions from Resume"}
+                                                            ) : "Generate Questions"}
                                                     </Button>
                                                 </div>
                                             )}
@@ -657,8 +648,12 @@ export default function SpeechAnalysisClient() {
                                                     <Label className="font-semibold">3. Your Questions & Ideal Answers</Label>
                                                     <p className="text-xs text-muted-foreground">Click a question to select it for your rehearsal session. The AI will evaluate how relevant your answer is to the selected question.</p>
                                                     <Accordion type="single" collapsible className="w-full" onValueChange={(value) => {
-                                                        const questionIndex = parseInt(value.split('-')[1]);
-                                                        setActiveQuestion(generatedQuestions[questionIndex] || null);
+                                                        if (value) {
+                                                            const questionIndex = parseInt(value.split('-')[1]);
+                                                            setActiveQuestion(generatedQuestions[questionIndex] || null);
+                                                        } else {
+                                                            setActiveQuestion(null);
+                                                        }
                                                     }}>
                                                         {generatedQuestions.map((q, index) => (
                                                         <AccordionItem value={`item-${index}`} key={index}>
@@ -743,5 +738,3 @@ export default function SpeechAnalysisClient() {
     </div>
   );
 }
-
-    
