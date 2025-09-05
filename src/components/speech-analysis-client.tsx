@@ -238,191 +238,195 @@ export default function SpeechAnalysisClient() {
 
   return (
     <div className="w-full max-w-7xl space-y-8">
-      <div className="space-y-4">
-        <h2 className="font-headline text-2xl font-semibold">
-            Select Analysis Context
-        </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {modeOptions.map(option => {
-                const isSelected = mode === option.value;
-                return (
-                    <Card 
-                        key={option.value}
-                        onClick={() => handleModeChange(option.value as AnalysisMode)}
-                        className={cn(
-                            "rounded-lg border-2 bg-card/50 p-4 transition-all cursor-pointer hover:shadow-lg",
-                            isSelected ? "border-primary shadow-md" : "border-muted hover:border-muted-foreground/50"
-                        )}
-                    >
-                        <div className="flex items-start gap-4">
-                            <div className={cn("flex-shrink-0 h-12 w-12 rounded-lg flex items-center justify-center bg-primary/10 text-primary", isSelected && "bg-primary text-primary-foreground")}>
-                                <option.icon />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+        <div className="space-y-4">
+            <h2 className="font-headline text-2xl font-semibold">
+                Select Analysis Context
+            </h2>
+            <div className="grid grid-cols-1 gap-4">
+                {modeOptions.map(option => {
+                    const isSelected = mode === option.value;
+                    return (
+                        <Card 
+                            key={option.value}
+                            onClick={() => handleModeChange(option.value as AnalysisMode)}
+                            className={cn(
+                                "rounded-lg border-2 bg-card/50 p-4 transition-all cursor-pointer hover:shadow-lg",
+                                isSelected ? "border-primary shadow-md" : "border-muted hover:border-muted-foreground/50"
+                            )}
+                        >
+                            <div className="flex items-start gap-4">
+                                <div className={cn("flex-shrink-0 h-12 w-12 rounded-lg flex items-center justify-center bg-primary/10 text-primary", isSelected && "bg-primary text-primary-foreground")}>
+                                    <option.icon />
+                                </div>
+                                <div className="flex-grow">
+                                    <h3 className="font-bold">{option.title}</h3>
+                                    <p className="text-sm text-muted-foreground">{option.description}</p>
+                                </div>
                             </div>
-                            <div className="flex-grow">
-                                <h3 className="font-bold">{option.title}</h3>
-                                <p className="text-sm text-muted-foreground">{option.description}</p>
-                            </div>
-                        </div>
-                    </Card>
-                )
-            })}
+                        </Card>
+                    )
+                })}
+            </div>
         </div>
-      </div>
-      
-      {mode === "Presentation Mode" && (
-        <Card className="rounded-lg border shadow-lg bg-card/50 w-full">
-            <CardHeader>
-                <CardTitle className="font-headline text-2xl">Provide Your Speech</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <SpeechInput onSpeechSampleReady={setSpeechSample} key="presentation" />
-            </CardContent>
-        </Card>
-      )}
 
-      {mode === "Rehearsal Mode" && (
         <div className="space-y-6">
-            <Card className="rounded-lg border shadow-lg bg-card/50 w-full">
-                <CardHeader>
-                    <CardTitle className="font-headline text-2xl">Set Up Your Rehearsal</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="question" className="font-semibold">Interview Question</Label>
-                        <Textarea
-                            id="question"
-                            value={question}
-                            onChange={(e) => setQuestion(e.target.value)}
-                            placeholder="Enter the interview question here..."
-                            className="bg-background"
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="perfect-answer" className="font-semibold">Your Perfect Answer</Label>
-                        <Textarea
-                            id="perfect-answer"
-                            value={perfectAnswer}
-                            onChange={(e) => setPerfectAnswer(e.target.value)}
-                            placeholder="Provide an ideal or 'perfect' answer for comparison."
-                            className="bg-background"
-                        />
-                    </div>
-                </CardContent>
-            </Card>
-
+          {mode === "Presentation Mode" && (
             <Card className="rounded-lg border shadow-lg bg-card/50 w-full">
                 <CardHeader>
                     <CardTitle className="font-headline text-2xl">Provide Your Speech</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <SpeechInput onSpeechSampleReady={setSpeechSample} key="rehearsal" />
+                    <SpeechInput onSpeechSampleReady={setSpeechSample} key="presentation" />
                 </CardContent>
             </Card>
-        </div>
-      )}
+          )}
 
-      {mode === "Interview Mode" && (
-          <div className="space-y-6">
-              <Card className="rounded-lg border shadow-lg bg-card/50 w-full">
-                  <CardHeader>
-                      <CardTitle className="font-headline text-2xl">Step 1: Upload Resume</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                      {resumeFile ? (
-                          <div className="flex items-center justify-between rounded-md border bg-background p-3">
-                              <div className="flex items-center gap-2">
-                                  <CheckCircle className="h-5 w-5 text-green-500" />
-                                  <span className="text-sm font-medium">{resumeFile.name}</span>
-                              </div>
-                              <Button variant="ghost" size="icon" onClick={resetInterviewState}>
-                                  <X className="h-4 w-4" />
-                              </Button>
-                          </div>
-                      ) : (
-                          <Button asChild variant="outline" className="w-full">
-                              <label htmlFor="resume-upload">
-                                  <FileText className="mr-2 h-4 w-4" />
-                                  Select Resume File (.pdf, .txt, .docx)
-                                  <input id="resume-upload" type="file" accept=".pdf,.txt,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={handleResumeFileChange} className="hidden" />
-                              </label>
-                          </Button>
-                      )}
-                      {(isLoading && loadingMessage.includes("Extracting")) && (
-                        <div className="flex items-center justify-center space-x-2 mt-4">
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            <p className="text-sm text-muted-foreground">Extracting info...</p>
+          {mode === "Rehearsal Mode" && (
+            <div className="space-y-6">
+                <Card className="rounded-lg border shadow-lg bg-card/50 w-full">
+                    <CardHeader>
+                        <CardTitle className="font-headline text-2xl">Set Up Your Rehearsal</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="question" className="font-semibold">Interview Question</Label>
+                            <Textarea
+                                id="question"
+                                value={question}
+                                onChange={(e) => setQuestion(e.target.value)}
+                                placeholder="Enter the interview question here..."
+                                className="bg-background"
+                            />
                         </div>
-                      )}
-                  </CardContent>
-              </Card>
+                        <div className="space-y-2">
+                            <Label htmlFor="perfect-answer" className="font-semibold">Your Perfect Answer</Label>
+                            <Textarea
+                                id="perfect-answer"
+                                value={perfectAnswer}
+                                onChange={(e) => setPerfectAnswer(e.target.value)}
+                                placeholder="Provide an ideal or 'perfect' answer for comparison."
+                                className="bg-background"
+                            />
+                        </div>
+                    </CardContent>
+                </Card>
 
-              {resumeInfoText && (
+                <Card className="rounded-lg border shadow-lg bg-card/50 w-full">
+                    <CardHeader>
+                        <CardTitle className="font-headline text-2xl">Provide Your Speech</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <SpeechInput onSpeechSampleReady={setSpeechSample} key="rehearsal" />
+                    </CardContent>
+                </Card>
+            </div>
+          )}
+
+          {mode === "Interview Mode" && (
+              <div className="space-y-6">
                   <Card className="rounded-lg border shadow-lg bg-card/50 w-full">
                       <CardHeader>
-                          <CardTitle className="font-headline text-2xl">Step 2: Generate & Select Question</CardTitle>
+                          <CardTitle className="font-headline text-2xl">Step 1: Upload Resume</CardTitle>
                       </CardHeader>
                       <CardContent>
-                          <Button 
-                          onClick={handleGenerateQuestions}
-                          className="w-full mb-4" 
-                          disabled={isLoading && loadingMessage.includes("Generating")}>
-                              {isLoading && loadingMessage.includes("Generating") ? (
-                                  <>
-                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                  Generating...
-                                  </>
-                              ) : "Generate Questions"}
-                          </Button>
-
-                          {generatedQuestions.length > 0 && (
-                            <RadioGroup 
-                                onValueChange={(value) => {
-                                    const question = generatedQuestions.find(q => q.question === value);
-                                    setActiveQuestion(question || null);
-                                }}
-                                className="space-y-2 mt-4"
-                            >
-                                {generatedQuestions.map((q, index) => (
-                                    <div key={index} className="rounded-md border p-4 flex flex-col gap-4">
-                                        <div className="flex items-start gap-3">
-                                            <RadioGroupItem value={q.question} id={`q-${index}`} />
-                                            <Label htmlFor={`q-${index}`} className="font-semibold text-base cursor-pointer flex-grow">{q.question}</Label>
-                                        </div>
-
-                                        {activeQuestion?.question === q.question && (
-                                            <div className="pl-8 space-y-4">
-                                                <div className="flex items-center space-x-2">
-                                                    <Switch id={`show-answer-${index}`} checked={showIdealAnswer} onCheckedChange={setShowIdealAnswer} />
-                                                    <Label htmlFor={`show-answer-${index}`}>Show ideal answer</Label>
-                                                </div>
-                                                {showIdealAnswer && (
-                                                    <div className="text-sm text-muted-foreground italic p-3 bg-secondary/50 rounded-md border">
-                                                        {q.answer}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-                                ))}
-                            </RadioGroup>
+                          {resumeFile ? (
+                              <div className="flex items-center justify-between rounded-md border bg-background p-3">
+                                  <div className="flex items-center gap-2">
+                                      <CheckCircle className="h-5 w-5 text-green-500" />
+                                      <span className="text-sm font-medium">{resumeFile.name}</span>
+                                  </div>
+                                  <Button variant="ghost" size="icon" onClick={resetInterviewState}>
+                                      <X className="h-4 w-4" />
+                                  </Button>
+                              </div>
+                          ) : (
+                              <Button asChild variant="outline" className="w-full">
+                                  <label htmlFor="resume-upload">
+                                      <FileText className="mr-2 h-4 w-4" />
+                                      Select Resume File (.pdf, .txt, .docx)
+                                      <input id="resume-upload" type="file" accept=".pdf,.txt,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={handleResumeFileChange} className="hidden" />
+                                  </label>
+                              </Button>
+                          )}
+                          {(isLoading && loadingMessage.includes("Extracting")) && (
+                            <div className="flex items-center justify-center space-x-2 mt-4">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                <p className="text-sm text-muted-foreground">Extracting info...</p>
+                            </div>
                           )}
                       </CardContent>
                   </Card>
-              )}
 
-              {activeQuestion && (
-                  <Card className="rounded-lg border shadow-lg bg-card/50 w-full">
-                      <CardHeader>
-                          <CardTitle className="font-headline text-2xl">Step 3: Provide Your Answer</CardTitle>
-                          <CardDescription>Now, provide your answer to the selected question: "{activeQuestion.question}"</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                          <SpeechInput onSpeechSampleReady={setSpeechSample} key={activeQuestion.question} />
-                      </CardContent>
-                  </Card>
-              )}
-          </div>
-      )}
+                  {resumeInfoText && (
+                      <Card className="rounded-lg border shadow-lg bg-card/50 w-full">
+                          <CardHeader>
+                              <CardTitle className="font-headline text-2xl">Step 2: Generate & Select Question</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                              <Button 
+                              onClick={handleGenerateQuestions}
+                              className="w-full mb-4" 
+                              disabled={isLoading && loadingMessage.includes("Generating")}>
+                                  {isLoading && loadingMessage.includes("Generating") ? (
+                                      <>
+                                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                      Generating...
+                                      </>
+                                  ) : "Generate Questions"}
+                              </Button>
+
+                              {generatedQuestions.length > 0 && (
+                                <RadioGroup 
+                                    onValueChange={(value) => {
+                                        const question = generatedQuestions.find(q => q.question === value);
+                                        setActiveQuestion(question || null);
+                                    }}
+                                    className="space-y-2 mt-4"
+                                >
+                                    {generatedQuestions.map((q, index) => (
+                                        <div key={index} className="rounded-md border p-4 flex flex-col gap-4">
+                                            <div className="flex items-start gap-3">
+                                                <RadioGroupItem value={q.question} id={`q-${index}`} />
+                                                <Label htmlFor={`q-${index}`} className="font-semibold text-base cursor-pointer flex-grow">{q.question}</Label>
+                                            </div>
+
+                                            {activeQuestion?.question === q.question && (
+                                                <div className="pl-8 space-y-4">
+                                                    <div className="flex items-center space-x-2">
+                                                        <Switch id={`show-answer-${index}`} checked={showIdealAnswer} onCheckedChange={setShowIdealAnswer} />
+                                                        <Label htmlFor={`show-answer-${index}`}>Show ideal answer</Label>
+                                                    </div>
+                                                    {showIdealAnswer && (
+                                                        <div className="text-sm text-muted-foreground italic p-3 bg-secondary/50 rounded-md border">
+                                                            {q.answer}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </RadioGroup>
+                              )}
+                          </CardContent>
+                      </Card>
+                  )}
+
+                  {activeQuestion && (
+                      <Card className="rounded-lg border shadow-lg bg-card/50 w-full">
+                          <CardHeader>
+                              <CardTitle className="font-headline text-2xl">Step 3: Provide Your Answer</CardTitle>
+                              <CardDescription>Now, provide your answer to the selected question: "{activeQuestion.question}"</CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                              <SpeechInput onSpeechSampleReady={setSpeechSample} key={activeQuestion.question} />
+                          </CardContent>
+                      </Card>
+                  )}
+              </div>
+          )}
+        </div>
+      </div>
 
 
       <div className="flex justify-center py-6">
@@ -458,5 +462,3 @@ export default function SpeechAnalysisClient() {
     </div>
   );
 }
-
-    
