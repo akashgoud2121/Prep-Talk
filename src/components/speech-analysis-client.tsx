@@ -23,6 +23,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 
 type AnalysisMode = "Presentation Mode" | "Interview Mode" | "Practice Mode";
@@ -424,13 +425,22 @@ a.click();
               <DialogHeader>
                   <DialogTitle>Prepare Your Answers</DialogTitle>
                   <DialogDescription>
-                      Review the questions below. You have 30 seconds to prepare.
+                      Review the questions and ideal answers below. You have 30 seconds to prepare.
                   </DialogDescription>
               </DialogHeader>
-              <div className="space-y-4 py-4">
-                  {generatedQuestions.map((q, index) => (
-                      <div key={index} className="font-semibold">{index + 1}. {q.question}</div>
-                  ))}
+              <div className="space-y-2 py-4 max-h-[60vh] overflow-y-auto pr-2">
+                  <Accordion type="single" collapsible className="w-full">
+                    {generatedQuestions.map((q, index) => (
+                      <AccordionItem value={`item-${index}`} key={index}>
+                        <AccordionTrigger className="font-semibold text-left">{index + 1}. {q.question}</AccordionTrigger>
+                        <AccordionContent>
+                          <p className="text-sm text-muted-foreground italic">
+                            {q.answer}
+                          </p>
+                        </AccordionContent>
+                      </AccordionItem>
+                    ))}
+                  </Accordion>
               </div>
               <div className="flex justify-center items-center gap-4">
                   <div className="text-2xl font-bold">{prepTime}</div>
