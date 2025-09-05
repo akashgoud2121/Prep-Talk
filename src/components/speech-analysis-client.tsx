@@ -290,44 +290,27 @@ export default function SpeechAnalysisClient() {
     if (!obj) return "";
     let text = "";
     if (obj.name) text += `Name: ${obj.name}\n\n`;
-    if (obj.summary) text += `Summary: ${obj.summary}\n\n`;
 
-    if(obj.contact) {
-      text += "Contact:\n";
-      if (obj.contact.email) text += `  - Email: ${obj.contact.email}\n`;
-      if (obj.contact.phone) text += `  - Phone: ${obj.contact.phone}\n`;
-      if (obj.contact.linkedin) text += `  - LinkedIn: ${obj.contact.linkedin}\n`;
-      if (obj.contact.website) text += `  - Website: ${obj.contact.website}\n`;
-      text += "\n";
+    if (obj.education && obj.education.length > 0) {
+        text += "Education Institutions:\n";
+        obj.education.forEach(edu => {
+            text += `  - ${edu.institution}\n`;
+        });
+        text += "\n";
     }
 
     if (obj.experience && obj.experience.length > 0) {
-        text += "Experience:\n";
+        text += "Companies:\n";
         obj.experience.forEach(exp => {
-            text += `  - ${exp.jobTitle} at ${exp.company} (${exp.startDate || ''} - ${exp.endDate || 'Present'})\n`;
-            exp.responsibilities.forEach(resp => {
-                text += `    - ${resp}\n`;
-            });
+            text += `  - ${exp.company}\n`;
         });
         text += "\n";
-    }
-
-    if (obj.education && obj.education.length > 0) {
-        text += "Education:\n";
-        obj.education.forEach(edu => {
-            text += `  - ${edu.degree} in ${edu.major || ''}, ${edu.institution} (${edu.graduationDate || ''})\n`;
-        });
-        text += "\n";
-    }
-
-    if (obj.skills && obj.skills.length > 0) {
-        text += `Skills: ${obj.skills.join(', ')}\n\n`;
     }
     
     if (obj.projects && obj.projects.length > 0) {
         text += "Projects:\n";
         obj.projects.forEach(proj => {
-            text += `  - ${proj.name}: ${proj.description}\n`;
+            text += `  - ${proj.name}\n`;
         });
         text += "\n";
     }
@@ -403,8 +386,9 @@ export default function SpeechAnalysisClient() {
           const projects = extractedResumeData.projects?.map(p => p.name).join(', ') || 'various projects';
 
           const resumeSummary = `The candidate has worked in ${roles}. Key skills include: ${skills}. Notable projects: ${projects}.`;
+          const fullResumeText = objectToText(extractedResumeData);
 
-          const result = await generateQuestionsFromResume({ resumeSummary, resumeText: resumeInfoText });
+          const result = await generateQuestionsFromResume({ resumeSummary, resumeText: fullResumeText });
           if (result.questions && result.questions.length > 0) {
               setGeneratedQuestions(result.questions);
               toast({
