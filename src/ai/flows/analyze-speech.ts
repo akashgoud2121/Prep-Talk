@@ -32,6 +32,8 @@ const prompt = ai.definePrompt({
 
   IMPORTANT: The speech sample may be provided as text OR as an audio data URI. If it is an audio data URI you MUST first transcribe the audio into text. Then, use that transcription for the analysis below. If the 'speechSample' is already text, use it directly.
   
+  CRITICAL: You must strictly evaluate the speech based on the provided context. If the user speaks about content that is irrelevant to the selected mode (especially in "Interview Mode" or "Rehearsal Mode" where a specific question is provided), you MUST penalize their score in the 'Relevance' and 'Organization' criteria and reflect this in the 'totalScore' and 'overallAssessment'. The user should only speak about the provided topic.
+
   Return your answer as a valid JSON object following this schema exactly (do not include any extra text).
 
   Speech Sample (Candidate's Answer):
