@@ -32,64 +32,63 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 type AnalysisMode = "Presentation Mode" | "Interview Mode" | "Rehearsal Mode";
 
 // Define types for the SpeechRecognition API to fix TypeScript errors
-interface SpeechRecognitionResult {
-  isFinal: boolean;
-  [key: number]: SpeechRecognitionAlternative;
-}
-
-interface SpeechRecognitionAlternative {
-  transcript: string;
-  confidence: number;
-}
-
-interface SpeechRecognitionResultList {
-  [key: number]: SpeechRecognitionResult;
-  length: number;
-}
-
 interface SpeechRecognitionEvent extends Event {
   results: SpeechRecognitionResultList;
   resultIndex: number;
 }
 
+interface SpeechRecognitionResultList {
+  item(index: number): SpeechRecognitionResult;
+  readonly length: number;
+}
+
+interface SpeechRecognitionResult {
+  readonly isFinal: boolean;
+  item(index: number): SpeechRecognitionAlternative;
+  readonly length: number;
+}
+
+interface SpeechRecognitionAlternative {
+  readonly transcript: string;
+  readonly confidence: number;
+}
+
 interface SpeechRecognitionErrorEvent extends Event {
-  error: string;
+  error: SpeechRecognitionErrorCode;
   message: string;
 }
 
+type SpeechRecognitionErrorCode =
+  | 'no-speech'
+  | 'aborted'
+  | 'audio-capture'
+  | 'network'
+  | 'not-allowed'
+  | 'service-not-allowed'
+  | 'bad-grammar'
+  | 'language-not-supported';
+
+
 interface CustomSpeechRecognition extends EventTarget {
-  // Properties
   continuous: boolean;
   interimResults: boolean;
   lang: string;
   maxAlternatives: number;
-  serviceURI: string;
-  grammars: any;
   
-  // Methods
   start(): void;
   stop(): void;
   abort(): void;
   
-  // Event handlers
   onresult: ((event: SpeechRecognitionEvent) => void) | null;
   onend: (() => void) | null;
   onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
-  onstart: (() => void) | null;
-  onspeechstart: (() => void) | null;
-  onspeechend: (() => void) | null;
-  onsoundstart: (() => void) | null;
-  onsoundend: (() => void) | null;
-  onaudiostart: (() => void) | null;
-  onaudioend: (() => void) | null;
-  onnomatch: ((event: SpeechRecognitionEvent) => void) | null;
 }
 
 
 declare global {
   interface Window {
-    SpeechRecognition: new () => CustomSpeechRecognition;
-    webkitSpeechRecognition: new () => CustomSpeechRecognition;
+    SpeechRecognition?: new () => CustomSpeechRecognition;
+    webkitSpeechRecognition?: new () => CustomSpeechRecognition;
   }
 }
 
@@ -339,7 +338,7 @@ export default function SpeechAnalysisClient() {
       const resumeDataUri = await fileToDataUri(file);
       const result = await extractResumeInfo({ resumeDataUri });
       setExtractedResumeData(result);
-      const resumeText = objectToText(result);
+      const resumeText = await file.text();
       setResumeInfoText(resumeText);
       toast({
         title: "Resume Info Extracted",
@@ -387,10 +386,7 @@ export default function SpeechAnalysisClient() {
 
           const resumeSummary = `The candidate has worked in ${roles}. Key skills include: ${skills}. Notable projects: ${projects}.`;
           
-          // Use the full extracted text for detailed answer generation
-          const fullResumeText = resumeInfoText; 
-
-          const result = await generateQuestionsFromResume({ resumeSummary, resumeText: fullResumeText });
+          const result = await generateQuestionsFromResume({ resumeSummary, resumeText: resumeInfoText });
           if (result.questions && result.questions.length > 0) {
               setGeneratedQuestions(result.questions);
               toast({
@@ -511,7 +507,7 @@ export default function SpeechAnalysisClient() {
                             Record
                         </TabsTrigger>
                         <TabsTrigger value="upload">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" x2="12" y1="3" y2="15"></line></svg>
+                            <svg xmlns="http://wwww3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" x2="12" y1="3" y2="15"></line></svg>
                             Upload
                         </TabsTrigger>
                         </TabsList>
@@ -650,8 +646,8 @@ export default function SpeechAnalysisClient() {
                                                     <Button asChild variant="outline" className="w-full" onClick={(e) => e.stopPropagation()}>
                                                         <label htmlFor="resume-upload">
                                                             <FileText className="mr-2 h-4 w-4" />
-                                                            Select Resume File (.pdf, .txt)
-                                                            <input id="resume-upload" type="file" accept=".pdf,.txt" onChange={handleResumeFileChange} className="hidden" />
+                                                            Select Resume File (.pdf, .txt, .docx)
+                                                            <input id="resume-upload" type="file" accept=".pdf,.txt,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={handleResumeFileChange} className="hidden" />
                                                         </label>
                                                     </Button>
                                                 )}
@@ -674,6 +670,7 @@ export default function SpeechAnalysisClient() {
                                                         rows={10}
                                                         className="bg-background text-xs font-mono"
                                                         onClick={(e) => e.stopPropagation()}
+                                                        readOnly
                                                     />
                                                      <Button 
                                                         onClick={(e) => { e.stopPropagation(); handleGenerateQuestions(); }} 
@@ -780,5 +777,3 @@ export default function SpeechAnalysisClient() {
     </div>
   );
 }
-
-    
