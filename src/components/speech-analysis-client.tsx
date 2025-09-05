@@ -114,7 +114,7 @@ const modeOptions = [
         value: "Interview Mode",
         icon: InterviewIcon,
         title: "Interview",
-        description: "Practice for an interview. Upload a resume to generate tailored questions and get your analysis report.",
+        description: "Practice for an interview. Upload a resume to generate tailored questions and answers. Pick this mode to get instant feedback.",
     },
     {
         value: "Rehearsal Mode",
