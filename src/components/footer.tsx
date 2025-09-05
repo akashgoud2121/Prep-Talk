@@ -5,7 +5,7 @@ import Link from "next/link";
 
 export default function Footer() {
   return (
-    <footer className="w-full border-t border-border/50 bg-background/50 backdrop-blur-sm mt-12">
+    <footer className="w-full border-t border-border/50 bg-secondary backdrop-blur-sm mt-12">
       <div className="container mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 py-8 px-4 md:px-6 text-sm">
         <div className="flex flex-col items-center md:items-start space-y-4">
           <div className="flex items-center gap-3">
@@ -19,9 +19,10 @@ export default function Footer() {
             />
             <h3 className="text-xl font-bold font-headline">Cognisys AI</h3>
           </div>
-          <p className="text-muted-foreground text-center md:text-left">
-            &copy; {new Date().getFullYear()} Cognisys AI. All rights reserved.
-          </p>
+          <div className="text-muted-foreground text-center md:text-left">
+             <p>&copy; {new Date().getFullYear()} Cognisys AI. All rights reserved.</p>
+             <p>Terms and Conditions apply.</p>
+          </div>
         </div>
 
         <div className="text-muted-foreground text-center md:text-left">
