@@ -108,19 +108,19 @@ const modeOptions = [
         value: "Presentation Mode", 
         icon: PresentationIcon, 
         title: "Presentation",
-        description: "Deliver a presentation on any topic for general feedback and analysis.",
+        description: "Present on any topic. Get instant feedback on your delivery, language, and content.",
     },
     { 
         value: "Interview Mode",
         icon: InterviewIcon,
         title: "Interview",
-        description: "Upload a resume to get tailored questions and rehearse your answers.",
+        description: "Practice for an interview. Upload a resume to generate tailored questions and rehearse your answers.",
     },
     {
         value: "Rehearsal Mode",
         icon: RehearsalIcon,
         title: "Rehearsal",
-        description: "Fine-tune your answers. Input a question and a model answer, then record your own to get a side-by-side analysis.",
+        description: "Rehearse a specific answer. Provide a question and an ideal answer to compare your response against.",
     }
 ];
 
