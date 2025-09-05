@@ -17,7 +17,6 @@ import {
 } from "@/ai/flows/generate-questions-from-resume";
 import {
   extractResumeInfo,
-  ExtractedResumeInfo,
 } from "@/ai/flows/extract-resume-info";
 import AnalysisDashboard from "@/components/analysis-dashboard";
 import EmptyState from "@/components/empty-state";
@@ -277,11 +276,41 @@ export default function SpeechAnalysisClient() {
     }
   };
   
-  const handleResumeFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const fileToText = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (event) => resolve(event.target?.result as string);
+        reader.onerror = (error) => reject(error);
+        reader.readAsText(file);
+    });
+
+  const handleResumeFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      setResumeFile(file);
-      handleExtractResumeInfo(file);
+    if (!file) return;
+
+    setResumeFile(file);
+    setIsLoading(true);
+    setLoadingMessage("Reading resume...");
+    setResumeInfoText("");
+    setGeneratedQuestions([]);
+    setActiveQuestion(null);
+
+    try {
+      const text = await fileToText(file);
+      setResumeInfoText(text);
+      toast({
+        title: "Resume Content Loaded",
+        description: "Review the resume text below, then generate questions.",
+      });
+    } catch (error) {
+      console.error("Resume reading failed:", error);
+      toast({
+        variant: "destructive",
+        title: "Resume Reading Failed",
+        description: "Could not read the resume file. Please try a different file.",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -304,14 +333,6 @@ export default function SpeechAnalysisClient() {
       reader.onload = (event) => resolve(event.target?.result as string);
       reader.onerror = (error) => reject(error);
       reader.readAsDataURL(file);
-    });
-
-  const fileToText = (file: File) =>
-    new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (event) => resolve(event.target?.result as string);
-        reader.onerror = (error) => reject(error);
-        reader.readAsText(file);
     });
 
   const handleExtractResumeInfo = async (file: File) => {
@@ -621,16 +642,16 @@ export default function SpeechAnalysisClient() {
                                                 )}
                                             </div>
                                             
-                                            {(isLoading && loadingMessage.includes("Extracting")) && (
+                                            {(isLoading && loadingMessage.includes("Reading resume...")) && (
                                                 <div className="flex items-center justify-center space-x-2">
                                                     <Loader2 className="h-4 w-4 animate-spin" />
-                                                    <p className="text-sm text-muted-foreground">Extracting information...</p>
+                                                    <p className="text-sm text-muted-foreground">Reading resume...</p>
                                                 </div>
                                             )}
 
                                             {resumeInfoText && (
                                                 <div className="space-y-2">
-                                                    <Label htmlFor="resume-info" className="font-semibold">2. Review Extracted Information</Label>
+                                                    <Label htmlFor="resume-info" className="font-semibold">2. Review Resume Content</Label>
                                                     <Textarea 
                                                         id="resume-info"
                                                         value={resumeInfoText}
@@ -648,7 +669,7 @@ export default function SpeechAnalysisClient() {
                                                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                                                 Generating...
                                                                 </>
-                                                            ) : "Generate Questions from Info"}
+                                                            ) : "Generate Questions from Resume"}
                                                     </Button>
                                                 </div>
                                             )}
