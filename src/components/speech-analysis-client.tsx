@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Loader2, Mic, Upload, X, Download } from "lucide-react";
+import { Loader2, Mic, Upload, X, Download, FileText, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -11,6 +11,10 @@ import {
   AnalyzeSpeechOutput,
   AnalyzeSpeechInput,
 } from "@/ai/flows/analyze-speech";
+import {
+  generateQuestionsFromResume,
+  InterviewQuestion,
+} from "@/ai/flows/generate-questions-from-resume";
 import AnalysisDashboard from "@/components/analysis-dashboard";
 import EmptyState from "@/components/empty-state";
 import { generatePdfReport } from "@/lib/pdf";
@@ -18,6 +22,8 @@ import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+
 
 type AnalysisMode = "Presentation Mode" | "Interview Mode" | "Practice Mode";
 
@@ -90,7 +96,7 @@ const InterviewIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><path d="M8 12a2 2 0 0 0 2-2V8H8"></path><path d="M14 12a2 2 0 0 0 2-2V8h-2"></path></svg>
 );
 const PracticeIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><path d="m9 14 2 2 4-4"></path></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="00 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><path d="m9 14 2 2 4-4"></path></svg>
 );
 
 const modeOptions = [
@@ -104,7 +110,7 @@ const modeOptions = [
         value: "Interview Mode",
         icon: InterviewIcon,
         title: "Interview",
-        description: "Focused feedback on how well you answer a specific question.",
+        description: "Upload a resume to get tailored questions and practice your answers.",
     },
     {
         value: "Practice Mode",
@@ -125,9 +131,14 @@ export default function SpeechAnalysisClient() {
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [currentTab, setCurrentTab] = useState("live");
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState("Analyzing...");
   const [analysisResult, setAnalysisResult] =
     useState<AnalyzeSpeechOutput | null>(null);
   const [isSpeechRecognitionSupported, setIsSpeechRecognitionSupported] = useState(false);
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [generatedQuestions, setGeneratedQuestions] = useState<InterviewQuestion[]>([]);
+  const [isPrepDialogVisible, setIsPrepDialogVisible] = useState(false);
+  const [prepTime, setPrepTime] = useState(30);
 
   const { toast } = useToast();
 
@@ -182,6 +193,19 @@ export default function SpeechAnalysisClient() {
       console.warn("SpeechRecognition API is not supported in this browser.");
     }
   }, [toast]);
+  
+  useEffect(() => {
+    if (isPrepDialogVisible && prepTime > 0) {
+      const timer = setTimeout(() => setPrepTime(prepTime - 1), 1000);
+      return () => clearTimeout(timer);
+    } else if (isPrepDialogVisible && prepTime === 0) {
+      setIsPrepDialogVisible(false);
+      toast({
+        title: "Time's up!",
+        description: "Your preparation time has ended. You can now record your answer."
+      });
+    }
+  }, [isPrepDialogVisible, prepTime, toast]);
 
   const handleToggleListening = () => {
     if (!recognitionRef.current) return;
@@ -246,7 +270,7 @@ export default function SpeechAnalysisClient() {
       a.href = audioURL;
       a.download = 'recording.webm';
       document.body.appendChild(a);
-      a.click();
+a.click();
       document.body.removeChild(a);
     }
   };
@@ -258,6 +282,15 @@ export default function SpeechAnalysisClient() {
       setAudioBlob(file);
       setAudioURL(URL.createObjectURL(file));
       setCurrentTab('upload');
+    }
+  };
+  
+  const handleResumeFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setResumeFile(file);
+      // Immediately generate questions
+      handleGenerateQuestions(file);
     }
   };
 
@@ -282,6 +315,43 @@ export default function SpeechAnalysisClient() {
       reader.readAsDataURL(file);
     });
 
+  const fileToText = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (event) => resolve(event.target?.result as string);
+        reader.onerror = (error) => reject(error);
+        reader.readAsText(file);
+    });
+
+  const handleGenerateQuestions = async (file: File) => {
+      if (!file) {
+          toast({ variant: "destructive", title: "No resume file selected." });
+          return;
+      }
+      setIsLoading(true);
+      setLoadingMessage("Generating questions from resume...");
+      try {
+          const resumeText = await fileToText(file);
+          const result = await generateQuestionsFromResume({ resumeText });
+          if (result.questions && result.questions.length > 0) {
+              setGeneratedQuestions(result.questions);
+              setPrepTime(30);
+              setIsPrepDialogVisible(true);
+          } else {
+              toast({ variant: "destructive", title: "Could not generate questions." });
+          }
+      } catch (error) {
+          console.error("Question generation failed:", error);
+          toast({
+              variant: "destructive",
+              title: "Question Generation Failed",
+              description: "Could not read resume or generate questions. Please try again.",
+          });
+      } finally {
+          setIsLoading(false);
+      }
+  };
+
   const handleAnalyze = async () => {
     let speechSample = "";
     if (currentTab === "live") {
@@ -298,22 +368,34 @@ export default function SpeechAnalysisClient() {
         speechSample = await fileToDataUri(audioBlob);
     }
 
-    if (mode === "Interview Mode" && !question) {
-      toast({ variant: "destructive", title: "Please enter an interview question." });
-      return;
+    let analysisQuestion = question;
+    let analysisPerfectAnswer = perfectAnswer;
+
+    if (mode === "Interview Mode") {
+        if (generatedQuestions.length === 0) {
+            toast({ variant: "destructive", title: "Please upload a resume to generate questions first." });
+            return;
+        }
+        // For simplicity, we evaluate against the first generated question.
+        // A more advanced implementation could let the user choose.
+        analysisQuestion = generatedQuestions[0].question;
+        analysisPerfectAnswer = generatedQuestions[0].answer;
     }
+
     if (mode === "Practice Mode" && (!question || !perfectAnswer)) {
       toast({ variant: "destructive", title: "Please enter both question and perfect answer." });
       return;
     }
 
     setIsLoading(true);
+    setLoadingMessage("Analyzing speech...");
     setAnalysisResult(null);
 
     try {
       const input: AnalyzeSpeechInput = { speechSample, mode };
-      if (question) input.question = question;
-      if (perfectAnswer && mode === "Practice Mode") input.perfectAnswer = perfectAnswer;
+      if (analysisQuestion) input.question = analysisQuestion;
+      // In interview mode, we treat the generated answer as the "perfect answer" for evaluation
+      if (analysisPerfectAnswer) input.perfectAnswer = analysisPerfectAnswer;
       
       const result = await analyzeSpeech(input);
       setAnalysisResult(result);
@@ -337,6 +419,25 @@ export default function SpeechAnalysisClient() {
   
   return (
     <div className="w-full max-w-7xl space-y-8">
+      <Dialog open={isPrepDialogVisible} onOpenChange={setIsPrepDialogVisible}>
+          <DialogContent className="sm:max-w-[600px]">
+              <DialogHeader>
+                  <DialogTitle>Prepare Your Answers</DialogTitle>
+                  <DialogDescription>
+                      Review the questions below. You have 30 seconds to prepare.
+                  </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                  {generatedQuestions.map((q, index) => (
+                      <div key={index} className="font-semibold">{index + 1}. {q.question}</div>
+                  ))}
+              </div>
+              <div className="flex justify-center items-center gap-4">
+                  <div className="text-2xl font-bold">{prepTime}</div>
+                  <p>seconds remaining</p>
+              </div>
+          </DialogContent>
+      </Dialog>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
         <div className="w-full space-y-4">
             <h2 className="flex items-center gap-3 font-headline text-2xl font-semibold">
@@ -472,7 +573,32 @@ export default function SpeechAnalysisClient() {
                             </div>
                             {isSelected && (
                                  <div className="mt-4 space-y-4">
-                                    {(option.value === "Interview Mode" || option.value === "Practice Mode") && (
+                                    {option.value === "Interview Mode" && (
+                                        <div className="space-y-2">
+                                            <Label htmlFor="resume-upload" className="font-semibold">Upload Resume</Label>
+                                            {resumeFile ? (
+                                                <div className="flex items-center justify-between rounded-md border bg-background p-2">
+                                                    <div className="flex items-center gap-2">
+                                                        <CheckCircle className="h-5 w-5 text-green-500" />
+                                                        <span className="text-sm font-medium">{resumeFile.name}</span>
+                                                    </div>
+                                                    <Button variant="ghost" size="icon" onClick={() => setResumeFile(null)}>
+                                                        <X className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            ) : (
+                                                <Button asChild variant="outline" className="w-full">
+                                                    <label htmlFor="resume-upload">
+                                                        <FileText className="mr-2 h-4 w-4" />
+                                                        Select Resume File
+                                                        <input id="resume-upload" type="file" accept=".txt,.pdf,.doc,.docx" onChange={handleResumeFileChange} className="hidden" />
+                                                    </label>
+                                                </Button>
+                                            )}
+                                        </div>
+                                    )}
+                                    {option.value === "Practice Mode" && (
+                                       <>
                                         <div className="space-y-2">
                                             <Label htmlFor="question" className="font-semibold">Interview Question</Label>
                                             <Textarea
@@ -484,9 +610,7 @@ export default function SpeechAnalysisClient() {
                                                 onClick={(e) => e.stopPropagation()}
                                             />
                                         </div>
-                                    )}
-                                    {option.value === "Practice Mode" && (
-                                         <div className="space-y-2">
+                                        <div className="space-y-2">
                                             <Label htmlFor="perfect-answer" className="font-semibold">Your Perfect Answer</Label>
                                             <Textarea
                                                 id="perfect-answer"
@@ -497,6 +621,7 @@ export default function SpeechAnalysisClient() {
                                                 onClick={(e) => e.stopPropagation()}
                                             />
                                         </div>
+                                       </>
                                     )}
                                 </div>
                             )}
@@ -512,7 +637,7 @@ export default function SpeechAnalysisClient() {
           {isLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Analyzing...
+              {loadingMessage}
             </>
           ) : (
              "Analyze My Speech"
@@ -521,7 +646,7 @@ export default function SpeechAnalysisClient() {
       </div>
 
       <div className="mt-8 w-full">
-        {isLoading ? (
+        {isLoading && loadingMessage === "Analyzing speech..." ? (
           <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border p-12">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
             <p className="mt-4 text-muted-foreground">
@@ -534,7 +659,7 @@ export default function SpeechAnalysisClient() {
             onDownloadPDF={handleDownloadPDF}
           />
         ) : (
-          <EmptyState />
+          !isLoading && <EmptyState />
         )}
       </div>
     </div>
