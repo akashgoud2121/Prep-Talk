@@ -5,37 +5,11 @@
  * @fileOverview Generates interview questions and ideal answers from a resume.
  *
  * - generateQuestionsFromResume - A function that generates interview questions and answers.
- * - GenerateQuestionsFromResumeInput - The input type for the generateQuestionsFromResume function.
- * - GenerateQuestionsFromResumeOutput - The return type for the generateQuestionsfromResume function.
- * - InterviewQuestion - The type for a single question/answer pair.
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { GenerateQuestionsFromResumeInput, GenerateQuestionsFromResumeInputSchema, GenerateQuestionsFromResumeOutput, GenerateQuestionsFromResumeOutputSchema } from '@/ai/schemas';
 
-const GenerateQuestionsFromResumeInputSchema = z.object({
-  resumeSummary: z.string().describe('A summary of the most important parts of a resume, including job titles, companies, skills, and projects.'),
-  resumeText: z.string().describe('The full text content of a resume.'),
-});
-export type GenerateQuestionsFromResumeInput = z.infer<
-  typeof GenerateQuestionsFromResumeInputSchema
->;
-
-const InterviewQuestionSchema = z.object({
-    question: z.string().describe("The interview question."),
-    answer: z.string().describe("The ideal, detailed answer to the question, tailored to the resume."),
-});
-export type InterviewQuestion = z.infer<typeof InterviewQuestionSchema>;
-
-const GenerateQuestionsFromResumeOutputSchema = z.object({
-  questions: z
-    .array(InterviewQuestionSchema)
-    .max(3)
-    .describe('An array of exactly 3 interview questions and their ideal answers.'),
-});
-export type GenerateQuestionsFromResumeOutput = z.infer<
-  typeof GenerateQuestionsFromResumeOutputSchema
->;
 
 export async function generateQuestionsFromResume(
   input: GenerateQuestionsFromResumeInput

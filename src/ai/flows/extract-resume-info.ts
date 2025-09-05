@@ -5,55 +5,10 @@
  * @fileOverview Extracts structured information from a resume file.
  *
  * - extractResumeInfo - A function that parses a resume and returns structured data.
- * - ExtractResumeInfoInput - The input type for the extractResumeInfo function.
- * - ExtractedResumeInfo - The return type for the extractResumeInfo function.
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
-
-const ExtractResumeInfoInputSchema = z.object({
-  resumeDataUri: z
-    .string()
-    .describe(
-      "A resume file, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
-    ),
-});
-export type ExtractResumeInfoInput = z.infer<typeof ExtractResumeInfoInputSchema>;
-
-const ExtractedResumeInfoSchema = z.object({
-  name: z.string().optional().describe("The candidate's full name."),
-  contact: z.object({
-    email: z.string().optional(),
-    phone: z.string().optional(),
-    linkedin: z.string().optional(),
-    website: z.string().optional(),
-  }).optional(),
-  summary: z.string().optional().describe("A professional summary or objective statement."),
-  experience: z.array(z.object({
-    jobTitle: z.string(),
-    company: z.string(),
-    location: z.string().optional(),
-    startDate: z.string().optional(),
-    endDate: z.string().optional(),
-    responsibilities: z.array(z.string()),
-  })).optional().describe("A list of professional experiences."),
-  education: z.array(z.object({
-    institution: z.string(),
-    degree: z.string(),
-    major: z.string().optional(),
-    graduationDate: z.string().optional(),
-  })).optional().describe("A list of educational qualifications."),
-  skills: z.array(z.string()).optional().describe("A list of skills."),
-  projects: z.array(z.object({
-    name: z.string(),
-    description: z.string(),
-    technologies: z.array(z.string()).optional(),
-  })).optional().describe("A list of personal or academic projects."),
-  certifications: z.array(z.string()).optional().describe("A list of certifications."),
-});
-export type ExtractedResumeInfo = z.infer<typeof ExtractedResumeInfoSchema>;
-
+import { ExtractResumeInfoInput, ExtractResumeInfoInputSchema, ExtractedResumeInfo, ExtractedResumeInfoSchema } from '@/ai/schemas';
 
 export async function extractResumeInfo(
   input: ExtractResumeInfoInput

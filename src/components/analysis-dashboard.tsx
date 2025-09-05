@@ -1,7 +1,7 @@
 
 "use client";
 
-import type { AnalyzeSpeechOutput } from "@/ai/flows/analyze-speech";
+import type { AnalyzeSpeechOutput } from "@/ai/schemas";
 import { Button } from "@/components/ui/button";
 import {
   Card,

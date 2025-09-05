@@ -6,19 +6,16 @@ import { Loader2, Mic, Upload, X, Download, FileText, CheckCircle } from "lucide
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import {
-  analyzeSpeech,
+import { analyzeSpeech } from "@/ai/flows/analyze-speech";
+import { generateQuestionsFromResume } from "@/ai/flows/generate-questions-from-resume";
+import { extractResumeInfo } from "@/ai/flows/extract-resume-info";
+import { extractTextFromFile } from "@/ai/flows/extract-text-from-file";
+import type {
   AnalyzeSpeechOutput,
   AnalyzeSpeechInput,
-} from "@/ai/flows/analyze-speech";
-import {
-  generateQuestionsFromResume,
   InterviewQuestion,
-} from "@/ai/flows/generate-questions-from-resume";
-import {
-  extractResumeInfo,
   ExtractedResumeInfo,
-} from "@/ai/flows/extract-resume-info";
+} from "@/ai/schemas";
 import AnalysisDashboard from "@/components/analysis-dashboard";
 import EmptyState from "@/components/empty-state";
 import { generatePdfReport } from "@/lib/pdf";
@@ -285,43 +282,6 @@ export default function SpeechAnalysisClient() {
       reader.readAsDataURL(file);
     });
   
-  const objectToText = (obj: ExtractedResumeInfo | null): string => {
-    if (!obj) return "";
-    let text = "";
-    if (obj.name) text += `Name: ${obj.name}\n\n`;
-
-    if (obj.education && obj.education.length > 0) {
-        text += "Education Institutions:\n";
-        obj.education.forEach(edu => {
-            text += `  - ${edu.institution}\n`;
-        });
-        text += "\n";
-    }
-
-    if (obj.experience && obj.experience.length > 0) {
-        text += "Companies:\n";
-        obj.experience.forEach(exp => {
-            text += `  - ${exp.company}\n`;
-        });
-        text += "\n";
-    }
-    
-    if (obj.projects && obj.projects.length > 0) {
-        text += "Projects:\n";
-        obj.projects.forEach(proj => {
-            text += `  - ${proj.name}\n`;
-        });
-        text += "\n";
-    }
-
-    if (obj.certifications && obj.certifications.length > 0) {
-        text += `Certifications: ${obj.certifications.join(', ')}\n`;
-    }
-
-    return text.trim();
-};
-
-
   const handleResumeFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -336,10 +296,16 @@ export default function SpeechAnalysisClient() {
 
     try {
       const resumeDataUri = await fileToDataUri(file);
-      const result = await extractResumeInfo({ resumeDataUri });
-      setExtractedResumeData(result);
-      const resumeText = await file.text();
-      setResumeInfoText(resumeText);
+
+      // Perform extraction of structured data and plain text in parallel
+      const [structuredInfo, textInfo] = await Promise.all([
+        extractResumeInfo({ resumeDataUri }),
+        extractTextFromFile({ fileDataUri: resumeDataUri }),
+      ]);
+      
+      setExtractedResumeData(structuredInfo);
+      setResumeInfoText(textInfo.text);
+
       toast({
         title: "Resume Info Extracted",
         description: "Review the extracted information, then generate questions.",

@@ -5,83 +5,11 @@
  * @fileOverview An AI agent that analyzes a speech sample and provides feedback.
  *
  * - analyzeSpeech - A function that handles the speech analysis process.
- * - AnalyzeSpeechInput - The input type for the analyzeSpeech function.
- * - AnalyzeSpeechOutput - The return type for the analyzeSpeech function.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-
-const evaluationCriteriaEnum = z.enum([
-  // Delivery
-  "Fluency",
-  "Pacing",
-  "Clarity",
-  "Confidence",
-  "Emotional Tone",
-  // Language
-  "Grammar",
-  "Vocabulary",
-  "Word Choice",
-  "Conciseness",
-  "Filler Words",
-  // Content
-  "Relevance",
-  "Organization",
-  "Accuracy",
-  "Depth",
-  "Persuasiveness",
-]);
-
-const evaluationCategoryEnum = z.enum([
-    "Delivery",
-    "Language",
-"Content"
-]);
-
-const HighlightedSegmentSchema = z.object({
-  text: z.string(),
-  type: z.enum(['default', 'filler', 'pause']),
-});
-
-const AnalyzeSpeechInputSchema = z.object({
-  speechSample: z.string().describe('The speech sample to analyze, either transcription or an audio data URI.'),
-  mode: z.enum(['Presentation Mode', 'Interview Mode', 'Rehearsal Mode']).describe('The context for the analysis.'),
-  question: z.string().optional().describe('The interview question being answered, required for Interview Mode and Rehearsal mode.'),
-  perfectAnswer: z.string().optional().describe('A perfect answer to compare against, required for Rehearsal Mode.'),
-});
-
-export type AnalyzeSpeechInput = z.infer<typeof AnalyzeSpeechInputSchema>;
-
-const AnalyzeSpeechOutputSchema = z.object({
-  metadata: z.object({
-    wordCount: z.number().describe('The number of words in the speech sample.'),
-    fillerWordCount: z.number().describe('The number of filler words (e.g., "um", "ah", "like") in the speech sample.'),
-    speechRateWPM: z.number().describe('The speech rate in words per minute.'),
-    averagePauseDurationMs: z.number().describe('The average pause duration in milliseconds. If not available from the source, estimate based on text.'),
-    pitchVariance: z.number().describe('The variance in pitch during the speech sample. If not available from the source, estimate based on text.'),
-    audioDurationSeconds: z.number().optional().describe('The duration of the audio in seconds, if audio was provided.'),
-    paceScore: z.number().min(0).max(100).describe('A score from 0-100 indicating how well-paced the speech is. Ideal is between 140-160 WPM.'),
-    clarityScore: z.number().min(0).max(100).describe('A score from 0-100 indicating the clarity of pronunciation and articulation.'),
-    pausePercentage: z.number().min(0).max(100).describe('The percentage of total speaking time spent in pauses.'),
-  }),
-  highlightedTranscription: z.array(HighlightedSegmentSchema).optional().describe('The full transcription, segmented for highlighting filler words and pauses. Concatenating all text fields should reconstruct the full transcription with pause annotations.'),
-  evaluationCriteria: z.array(
-    z.object({
-      category: evaluationCategoryEnum.describe("The category of the criteria. Assign one of: 'Delivery', 'Language', or 'Content'"),
-      criteria: evaluationCriteriaEnum.describe('The specific evaluation criteria.'),
-      score: z.number().min(0).max(10).describe('The score for the criteria (0-10).'),
-      evaluation: z.string().describe('A brief evaluation of the speech sample against the criteria.'),
-      comparison: z.string().optional().describe("How the candidate's answer compares with the perfect answer. This is only required for Rehearsal Mode."),
-      feedback: z.string().describe('Actionable feedback to improve the criteria.'),
-    })
-  ).describe('Detailed evaluation of the 15 specified criteria.'),
-  totalScore: z.number().min(0).max(100).describe('An overall assessment that summarizes performance across all criteria (0-100).'),
-  overallAssessment: z.string().describe('An overall assessment of the speech'),
-  suggestedSpeech: z.string().describe('A sample of how the speaker could have delivered their message more effectively.'),
-});
-
-export type AnalyzeSpeechOutput = z.infer<typeof AnalyzeSpeechOutputSchema>;
+import { AnalyzeSpeechInput, AnalyzeSpeechInputSchema, AnalyzeSpeechOutput, AnalyzeSpeechOutputSchema } from '@/ai/schemas';
 
 export async function analyzeSpeech(input: AnalyzeSpeechInput): Promise<AnalyzeSpeechOutput> {
   return analyzeSpeechFlow(input);

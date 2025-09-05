@@ -1,6 +1,6 @@
 
 import jsPDF from "jspdf";
-import type { AnalyzeSpeechOutput } from "@/ai/flows/analyze-speech";
+import type { AnalyzeSpeechOutput } from "@/ai/schemas";
 
 export const generatePdfReport = (data: AnalyzeSpeechOutput): void => {
   const doc = new jsPDF();
