@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -5,7 +6,8 @@
  *
  * - generateQuestionsFromResume - A function that generates interview questions and answers.
  * - GenerateQuestionsFromResumeInput - The input type for the generateQuestionsFromResume function.
- * - GenerateQuestionsFromResumeOutput - The return type for the generateQuestionsFromResume function.
+ * - GenerateQuestionsFromResumeOutput - The return type for the generateQuestionsfromResume function.
+ * - InterviewQuestion - The type for a single question/answer pair.
  */
 
 import {ai} from '@/ai/genkit';
@@ -22,17 +24,17 @@ const InterviewQuestionSchema = z.object({
     question: z.string().describe("The interview question."),
     answer: z.string().describe("The ideal, detailed answer to the question, tailored to the resume."),
 });
+export type InterviewQuestion = z.infer<typeof InterviewQuestionSchema>;
 
 const GenerateQuestionsFromResumeOutputSchema = z.object({
   questions: z
     .array(InterviewQuestionSchema)
     .max(3)
-    .describe('An array of up to 3 interview questions and their ideal answers.'),
+    .describe('An array of exactly 3 interview questions and their ideal answers.'),
 });
 export type GenerateQuestionsFromResumeOutput = z.infer<
   typeof GenerateQuestionsFromResumeOutputSchema
 >;
-export type InterviewQuestion = z.infer<typeof InterviewQuestionSchema>;
 
 export async function generateQuestionsFromResume(
   input: GenerateQuestionsFromResumeInput
@@ -45,7 +47,11 @@ const prompt = ai.definePrompt({
   model: 'googleai/gemini-1.5-flash-latest',
   input: {schema: GenerateQuestionsFromResumeInputSchema},
   output: {schema: GenerateQuestionsFromResumeOutputSchema},
-  prompt: `You are an expert career coach and hiring manager. Based on the following resume text, generate exactly three common but important interview questions. One of the questions must be "Tell me about yourself". For each question, provide a strong, detailed, ideal answer that the candidate could give, tailored specifically to the content of their resume.
+  prompt: `You are an expert career coach and hiring manager. Based on the following resume text, generate exactly three common but important interview questions.
+
+One of the questions MUST be "Tell me about yourself".
+
+For each of the three questions, provide a strong, detailed, ideal answer that the candidate could give. The answer MUST be tailored specifically to the content of the provided resume.
 
 Resume Text:
 {{{resumeText}}}

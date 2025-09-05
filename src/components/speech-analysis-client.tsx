@@ -22,7 +22,6 @@ import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 
@@ -138,8 +137,6 @@ export default function SpeechAnalysisClient() {
   const [isSpeechRecognitionSupported, setIsSpeechRecognitionSupported] = useState(false);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [generatedQuestions, setGeneratedQuestions] = useState<InterviewQuestion[]>([]);
-  const [isPrepDialogVisible, setIsPrepDialogVisible] = useState(false);
-  const [prepTime, setPrepTime] = useState(30);
 
   const { toast } = useToast();
 
@@ -195,19 +192,6 @@ export default function SpeechAnalysisClient() {
     }
   }, [toast]);
   
-  useEffect(() => {
-    if (isPrepDialogVisible && prepTime > 0) {
-      const timer = setTimeout(() => setPrepTime(prepTime - 1), 1000);
-      return () => clearTimeout(timer);
-    } else if (isPrepDialogVisible && prepTime === 0) {
-      setIsPrepDialogVisible(false);
-      toast({
-        title: "Time's up!",
-        description: "Your preparation time has ended. You can now record your answer."
-      });
-    }
-  }, [isPrepDialogVisible, prepTime, toast]);
-
   const handleToggleListening = () => {
     if (!recognitionRef.current) return;
     if (isListening) {
@@ -331,13 +315,16 @@ a.click();
       }
       setIsLoading(true);
       setLoadingMessage("Generating questions from resume...");
+      setGeneratedQuestions([]);
       try {
           const resumeText = await fileToText(file);
           const result = await generateQuestionsFromResume({ resumeText });
           if (result.questions && result.questions.length > 0) {
               setGeneratedQuestions(result.questions);
-              setPrepTime(30);
-              setIsPrepDialogVisible(true);
+              toast({
+                  title: "Questions Generated",
+                  description: "Review the questions and ideal answers, then record your response."
+              });
           } else {
               toast({ variant: "destructive", title: "Could not generate questions." });
           }
@@ -378,7 +365,7 @@ a.click();
             return;
         }
         // For simplicity, we evaluate against the first generated question.
-        // A more advanced implementation could let the user choose.
+        // A more advanced implementation could let the user choose which question to answer.
         analysisQuestion = generatedQuestions[0].question;
         analysisPerfectAnswer = generatedQuestions[0].answer;
     }
@@ -396,7 +383,11 @@ a.click();
       const input: AnalyzeSpeechInput = { speechSample, mode };
       if (analysisQuestion) input.question = analysisQuestion;
       // In interview mode, we treat the generated answer as the "perfect answer" for evaluation
-      if (analysisPerfectAnswer) input.perfectAnswer = analysisPerfectAnswer;
+      if (analysisPerfectAnswer) {
+          // If the user answers a different question, we compare it with its corresponding answer.
+          const matchingQuestion = generatedQuestions.find(q => q.question === analysisQuestion);
+          input.perfectAnswer = matchingQuestion ? matchingQuestion.answer : analysisPerfectAnswer;
+      }
       
       const result = await analyzeSpeech(input);
       setAnalysisResult(result);
@@ -420,34 +411,6 @@ a.click();
   
   return (
     <div className="w-full max-w-7xl space-y-8">
-      <Dialog open={isPrepDialogVisible} onOpenChange={setIsPrepDialogVisible}>
-          <DialogContent className="sm:max-w-[600px]">
-              <DialogHeader>
-                  <DialogTitle>Prepare Your Answers</DialogTitle>
-                  <DialogDescription>
-                      Review the questions and ideal answers below. You have 30 seconds to prepare.
-                  </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-2 py-4 max-h-[60vh] overflow-y-auto pr-2">
-                  <Accordion type="single" collapsible className="w-full">
-                    {generatedQuestions.map((q, index) => (
-                      <AccordionItem value={`item-${index}`} key={index}>
-                        <AccordionTrigger className="font-semibold text-left">{index + 1}. {q.question}</AccordionTrigger>
-                        <AccordionContent>
-                          <p className="text-sm text-muted-foreground italic">
-                            {q.answer}
-                          </p>
-                        </AccordionContent>
-                      </AccordionItem>
-                    ))}
-                  </Accordion>
-              </div>
-              <div className="flex justify-center items-center gap-4">
-                  <div className="text-2xl font-bold">{prepTime}</div>
-                  <p>seconds remaining</p>
-              </div>
-          </DialogContent>
-      </Dialog>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
         <div className="w-full space-y-4">
             <h2 className="flex items-center gap-3 font-headline text-2xl font-semibold">
@@ -566,7 +529,13 @@ a.click();
                     return (
                         <Card 
                             key={option.value}
-                            onClick={() => setMode(option.value as AnalysisMode)}
+                            onClick={() => {
+                                setMode(option.value as AnalysisMode);
+                                setResumeFile(null);
+                                setGeneratedQuestions([]);
+                                setQuestion("");
+                                setPerfectAnswer("");
+                            }}
                             className={cn(
                                 "rounded-lg border-2 bg-card/50 p-4 transition-all cursor-pointer hover:shadow-lg",
                                 isSelected ? "border-primary shadow-md" : "border-muted hover:border-muted-foreground/50"
@@ -584,26 +553,53 @@ a.click();
                             {isSelected && (
                                  <div className="mt-4 space-y-4">
                                     {option.value === "Interview Mode" && (
-                                        <div className="space-y-2">
-                                            <Label htmlFor="resume-upload" className="font-semibold">Upload Resume</Label>
-                                            {resumeFile ? (
-                                                <div className="flex items-center justify-between rounded-md border bg-background p-2">
-                                                    <div className="flex items-center gap-2">
-                                                        <CheckCircle className="h-5 w-5 text-green-500" />
-                                                        <span className="text-sm font-medium">{resumeFile.name}</span>
+                                        <div className="space-y-4">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="resume-upload" className="font-semibold">Upload Resume</Label>
+                                                {resumeFile ? (
+                                                    <div className="flex items-center justify-between rounded-md border bg-background p-2">
+                                                        <div className="flex items-center gap-2">
+                                                            <CheckCircle className="h-5 w-5 text-green-500" />
+                                                            <span className="text-sm font-medium">{resumeFile.name}</span>
+                                                        </div>
+                                                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setResumeFile(null); setGeneratedQuestions([]); }}>
+                                                            <X className="h-4 w-4" />
+                                                        </Button>
                                                     </div>
-                                                    <Button variant="ghost" size="icon" onClick={() => setResumeFile(null)}>
-                                                        <X className="h-4 w-4" />
+                                                ) : (
+                                                    <Button asChild variant="outline" className="w-full" onClick={(e) => e.stopPropagation()}>
+                                                        <label htmlFor="resume-upload">
+                                                            <FileText className="mr-2 h-4 w-4" />
+                                                            Select Resume File
+                                                            <input id="resume-upload" type="file" accept=".txt,.pdf,.doc,.docx" onChange={handleResumeFileChange} className="hidden" />
+                                                        </label>
                                                     </Button>
+                                                )}
+                                            </div>
+                                            
+                                            {isLoading && loadingMessage.includes("Generating") && (
+                                                <div className="flex items-center justify-center space-x-2">
+                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                    <p className="text-sm text-muted-foreground">Generating questions...</p>
                                                 </div>
-                                            ) : (
-                                                <Button asChild variant="outline" className="w-full">
-                                                    <label htmlFor="resume-upload">
-                                                        <FileText className="mr-2 h-4 w-4" />
-                                                        Select Resume File
-                                                        <input id="resume-upload" type="file" accept=".txt,.pdf,.doc,.docx" onChange={handleResumeFileChange} className="hidden" />
-                                                    </label>
-                                                </Button>
+                                            )}
+
+                                            {generatedQuestions.length > 0 && (
+                                                <div className="space-y-2">
+                                                    <Label className="font-semibold">Your Questions & Ideal Answers</Label>
+                                                    <Accordion type="single" collapsible className="w-full">
+                                                        {generatedQuestions.map((q, index) => (
+                                                        <AccordionItem value={`item-${index}`} key={index}>
+                                                            <AccordionTrigger className="font-semibold text-left" onClick={(e) => e.stopPropagation()}>{index + 1}. {q.question}</AccordionTrigger>
+                                                            <AccordionContent>
+                                                            <p className="text-sm text-muted-foreground italic">
+                                                                {q.answer}
+                                                            </p>
+                                                            </AccordionContent>
+                                                        </AccordionItem>
+                                                        ))}
+                                                    </Accordion>
+                                                </div>
                                             )}
                                         </div>
                                     )}
@@ -644,7 +640,7 @@ a.click();
 
       <div className="flex justify-center py-6">
         <Button onClick={handleAnalyze} size="lg" disabled={isLoading} className="w-full max-w-sm">
-          {isLoading ? (
+          {isLoading && loadingMessage.includes("Analyzing") ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               {loadingMessage}
