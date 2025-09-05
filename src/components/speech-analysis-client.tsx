@@ -285,7 +285,8 @@ export default function SpeechAnalysisClient() {
       reader.readAsDataURL(file);
     });
   
-  const objectToText = (obj: ExtractedResumeInfo) => {
+  const objectToText = (obj: ExtractedResumeInfo | null): string => {
+    if (!obj) return "";
     let text = "";
     if (obj.name) text += `Name: ${obj.name}\n`;
     if (obj.summary) text += `Summary: ${obj.summary}\n\n`;
@@ -302,7 +303,7 @@ export default function SpeechAnalysisClient() {
     if (obj.experience && obj.experience.length > 0) {
         text += "Experience:\n";
         obj.experience.forEach(exp => {
-            text += `  - ${exp.jobTitle} at ${exp.company} (${exp.startDate} - ${exp.endDate || 'Present'})\n`;
+            text += `  - ${exp.jobTitle} at ${exp.company} (${exp.startDate || ''} - ${exp.endDate || 'Present'})\n`;
             exp.responsibilities.forEach(resp => {
                 text += `    - ${resp}\n`;
             });
@@ -313,7 +314,7 @@ export default function SpeechAnalysisClient() {
     if (obj.education && obj.education.length > 0) {
         text += "Education:\n";
         obj.education.forEach(edu => {
-            text += `  - ${edu.degree} in ${edu.major}, ${edu.institution} (${edu.graduationDate})\n`;
+            text += `  - ${edu.degree} in ${edu.major || ''}, ${edu.institution} (${edu.graduationDate || ''})\n`;
         });
         text += "\n";
     }
@@ -352,7 +353,7 @@ export default function SpeechAnalysisClient() {
     try {
       const resumeDataUri = await fileToDataUri(file);
       const result = await extractResumeInfo({ resumeDataUri });
-      const resumeText = objectToText(result) || JSON.stringify(result, null, 2);
+      const resumeText = objectToText(result);
       setResumeInfoText(resumeText);
       toast({
         title: "Resume Info Extracted",
