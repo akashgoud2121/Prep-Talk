@@ -655,7 +655,7 @@ export default function SpeechAnalysisClient() {
                                             {generatedQuestions.length > 0 && (
                                                 <div className="space-y-2">
                                                     <Label className="font-semibold">3. Your Questions & Ideal Answers</Label>
-                                                    <p className="text-xs text-muted-foreground">Click a question to select it for your rehearsal session.</p>
+                                                    <p className="text-xs text-muted-foreground">Click a question to select it for your rehearsal session. The AI will evaluate how relevant your answer is to the selected question.</p>
                                                     <Accordion type="single" collapsible className="w-full" onValueChange={(value) => {
                                                         const questionIndex = parseInt(value.split('-')[1]);
                                                         setActiveQuestion(generatedQuestions[questionIndex] || null);
@@ -743,3 +743,5 @@ export default function SpeechAnalysisClient() {
     </div>
   );
 }
+
+    
