@@ -386,7 +386,9 @@ export default function SpeechAnalysisClient() {
           const projects = extractedResumeData.projects?.map(p => p.name).join(', ') || 'various projects';
 
           const resumeSummary = `The candidate has worked in ${roles}. Key skills include: ${skills}. Notable projects: ${projects}.`;
-          const fullResumeText = objectToText(extractedResumeData);
+          
+          // Use the full extracted text for detailed answer generation
+          const fullResumeText = resumeInfoText; 
 
           const result = await generateQuestionsFromResume({ resumeSummary, resumeText: fullResumeText });
           if (result.questions && result.questions.length > 0) {
