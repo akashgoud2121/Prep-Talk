@@ -137,6 +137,7 @@ export default function SpeechAnalysisClient() {
   const [isSpeechRecognitionSupported, setIsSpeechRecognitionSupported] = useState(false);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [generatedQuestions, setGeneratedQuestions] = useState<InterviewQuestion[]>([]);
+  const [activeQuestion, setActiveQuestion] = useState<InterviewQuestion | null>(null);
 
   const { toast } = useToast();
 
@@ -255,7 +256,7 @@ export default function SpeechAnalysisClient() {
       a.href = audioURL;
       a.download = 'recording.webm';
       document.body.appendChild(a);
-a.click();
+      a.click();
       document.body.removeChild(a);
     }
   };
@@ -274,7 +275,6 @@ a.click();
     const file = event.target.files?.[0];
     if (file) {
       setResumeFile(file);
-      // Immediately generate questions
       handleGenerateQuestions(file);
     }
   };
@@ -316,6 +316,7 @@ a.click();
       setIsLoading(true);
       setLoadingMessage("Generating questions from resume...");
       setGeneratedQuestions([]);
+      setActiveQuestion(null);
       try {
           const resumeText = await fileToText(file);
           const result = await generateQuestionsFromResume({ resumeText });
@@ -356,23 +357,32 @@ a.click();
         speechSample = await fileToDataUri(audioBlob);
     }
 
-    let analysisQuestion = question;
-    let analysisPerfectAnswer = perfectAnswer;
-
-    if (mode === "Interview Mode") {
-        if (generatedQuestions.length === 0) {
-            toast({ variant: "destructive", title: "Please upload a resume to generate questions first." });
-            return;
-        }
-        // For simplicity, we evaluate against the first generated question.
-        // A more advanced implementation could let the user choose which question to answer.
-        analysisQuestion = generatedQuestions[0].question;
-        analysisPerfectAnswer = generatedQuestions[0].answer;
+    if (!speechSample) {
+        toast({ variant: "destructive", title: "No speech sample provided." });
+        return;
     }
 
-    if (mode === "Practice Mode" && (!question || !perfectAnswer)) {
-      toast({ variant: "destructive", title: "Please enter both question and perfect answer." });
-      return;
+    const input: AnalyzeSpeechInput = { speechSample, mode };
+    
+    if (mode === "Interview Mode") {
+        if (!activeQuestion) {
+            toast({ variant: "destructive", title: "Please select a question to answer from the generated list." });
+            return;
+        }
+        input.question = activeQuestion.question;
+        input.perfectAnswer = activeQuestion.answer;
+        // In Interview mode, we switch the AI mode to "Practice Mode" for evaluation
+        // so it performs the comparison against the perfect answer.
+        input.mode = "Practice Mode";
+    }
+
+    if (mode === "Practice Mode") {
+       if (!question || !perfectAnswer) {
+         toast({ variant: "destructive", title: "Please enter both a question and a perfect answer." });
+         return;
+       }
+       input.question = question;
+       input.perfectAnswer = perfectAnswer;
     }
 
     setIsLoading(true);
@@ -380,15 +390,6 @@ a.click();
     setAnalysisResult(null);
 
     try {
-      const input: AnalyzeSpeechInput = { speechSample, mode };
-      if (analysisQuestion) input.question = analysisQuestion;
-      // In interview mode, we treat the generated answer as the "perfect answer" for evaluation
-      if (analysisPerfectAnswer) {
-          // If the user answers a different question, we compare it with its corresponding answer.
-          const matchingQuestion = generatedQuestions.find(q => q.question === analysisQuestion);
-          input.perfectAnswer = matchingQuestion ? matchingQuestion.answer : analysisPerfectAnswer;
-      }
-      
       const result = await analyzeSpeech(input);
       setAnalysisResult(result);
     } catch (error) {
@@ -535,6 +536,7 @@ a.click();
                                 setGeneratedQuestions([]);
                                 setQuestion("");
                                 setPerfectAnswer("");
+                                setActiveQuestion(null);
                             }}
                             className={cn(
                                 "rounded-lg border-2 bg-card/50 p-4 transition-all cursor-pointer hover:shadow-lg",
@@ -562,7 +564,7 @@ a.click();
                                                             <CheckCircle className="h-5 w-5 text-green-500" />
                                                             <span className="text-sm font-medium">{resumeFile.name}</span>
                                                         </div>
-                                                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setResumeFile(null); setGeneratedQuestions([]); }}>
+                                                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setResumeFile(null); setGeneratedQuestions([]); setActiveQuestion(null); }}>
                                                             <X className="h-4 w-4" />
                                                         </Button>
                                                     </div>
@@ -587,11 +589,15 @@ a.click();
                                             {generatedQuestions.length > 0 && (
                                                 <div className="space-y-2">
                                                     <Label className="font-semibold">Your Questions & Ideal Answers</Label>
-                                                    <Accordion type="single" collapsible className="w-full">
+                                                    <p className="text-xs text-muted-foreground">Click a question to select it for your practice session.</p>
+                                                    <Accordion type="single" collapsible className="w-full" onValueChange={(value) => {
+                                                        const questionIndex = parseInt(value.split('-')[1]);
+                                                        setActiveQuestion(generatedQuestions[questionIndex] || null);
+                                                    }}>
                                                         {generatedQuestions.map((q, index) => (
                                                         <AccordionItem value={`item-${index}`} key={index}>
-                                                            <AccordionTrigger className="font-semibold text-left" onClick={(e) => e.stopPropagation()}>{index + 1}. {q.question}</AccordionTrigger>
-                                                            <AccordionContent>
+                                                            <AccordionTrigger className={cn("font-semibold text-left", activeQuestion?.question === q.question && "text-primary")} onClick={(e) => e.stopPropagation()}>{index + 1}. {q.question}</AccordionTrigger>
+                                                            <AccordionContent onClick={(e) => e.stopPropagation()}>
                                                             <p className="text-sm text-muted-foreground italic">
                                                                 {q.answer}
                                                             </p>
