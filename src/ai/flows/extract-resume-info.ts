@@ -65,10 +65,11 @@ const prompt = ai.definePrompt({
   prompt: `You are an expert resume parser. Your task is to analyze the provided resume text and extract key information into a structured JSON format.
 
   Instructions:
-  1.  Thoroughly read the resume text.
+  1.  Thoroughly read the resume text provided below.
   2.  Identify and extract information for the following fields: name, contact (email, phone, etc.), summary, experience (job title, company, dates, responsibilities), education (institution, degree, graduation date), skills, projects, and certifications.
-  3.  If a section or piece of information is not present in the resume, omit the corresponding field from the JSON output.
-  4.  Return the data as a valid JSON object matching the provided schema. Do not include any extra text or explanations.
+  3.  Populate the JSON object with the data you find.
+  4.  If a section or piece of information (like 'projects' or 'certifications') is not present in the resume, you MUST omit the corresponding field or array from the JSON output entirely. Do not include empty arrays or null values for missing sections.
+  5.  Return ONLY the valid JSON object that matches the provided schema. Do not include any extra text, explanations, or markdown formatting like \`\`\`json.
 
   Resume Text:
   {{{resumeText}}}
