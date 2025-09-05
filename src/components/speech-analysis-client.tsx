@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Loader2, Mic, Upload, X, Download, FileText, CheckCircle } from "lucide-react";
+import { Loader2, Mic, Upload, X, FileText, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -20,74 +20,13 @@ import AnalysisDashboard from "@/components/analysis-dashboard";
 import EmptyState from "@/components/empty-state";
 import { generatePdfReport } from "@/lib/pdf";
 import { cn } from "@/lib/utils";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Switch } from "@/components/ui/switch";
+import SpeechInput from "./speech-input";
 
 type AnalysisMode = "Presentation Mode" | "Interview Mode" | "Rehearsal Mode";
-
-// Define types for the SpeechRecognition API to fix TypeScript errors
-interface SpeechRecognitionEvent extends Event {
-  results: SpeechRecognitionResultList;
-  resultIndex: number;
-}
-
-interface SpeechRecognitionResultList {
-  item(index: number): SpeechRecognitionResult;
-  readonly length: number;
-}
-
-interface SpeechRecognitionResult {
-  readonly isFinal: boolean;
-  item(index: number): SpeechRecognitionAlternative;
-  readonly length: number;
-}
-
-interface SpeechRecognitionAlternative {
-  readonly transcript: string;
-  readonly confidence: number;
-}
-
-interface SpeechRecognitionErrorEvent extends Event {
-  error: SpeechRecognitionErrorCode;
-  message: string;
-}
-
-type SpeechRecognitionErrorCode =
-  | 'no-speech'
-  | 'aborted'
-  | 'audio-capture'
-  | 'network'
-  | 'not-allowed'
-  | 'service-not-allowed'
-  | 'bad-grammar'
-  | 'language-not-supported';
-
-
-interface CustomSpeechRecognition extends EventTarget {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  maxAlternatives: number;
-  
-  start(): void;
-  stop(): void;
-  abort(): void;
-  
-  onresult: ((event: SpeechRecognitionEvent) => void) | null;
-  onend: (() => void) | null;
-  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
-}
-
-
-declare global {
-  interface Window {
-    SpeechRecognition?: new () => CustomSpeechRecognition;
-    webkitSpeechRecognition?: new () => CustomSpeechRecognition;
-  }
-}
 
 const PresentationIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><path d="M2 3h20"></path><path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3"></path><path d="m7 21 5-5 5 5"></path></svg>
@@ -124,157 +63,23 @@ export default function SpeechAnalysisClient() {
   const [mode, setMode] = useState<AnalysisMode>("Presentation Mode");
   const [question, setQuestion] = useState("");
   const [perfectAnswer, setPerfectAnswer] = useState("");
-  const [transcript, setTranscript] = useState("");
-  const [isListening, setIsListening] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
-  const [audioURL, setAudioURL] = useState<string | null>(null);
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
-  const [currentTab, setCurrentTab] = useState("live");
+  const [speechSample, setSpeechSample] = useState<string | null>(null);
+  
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("Analyzing...");
   const [analysisResult, setAnalysisResult] =
     useState<AnalyzeSpeechOutput | null>(null);
-  const [isSpeechRecognitionSupported, setIsSpeechRecognitionSupported] = useState(false);
+
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [generatedQuestions, setGeneratedQuestions] = useState<InterviewQuestion[]>([]);
   const [activeQuestion, setActiveQuestion] = useState<InterviewQuestion | null>(null);
   const [resumeInfoText, setResumeInfoText] = useState("");
   const [extractedResumeData, setExtractedResumeData] = useState<ExtractedResumeInfo | null>(null);
-  const [activeAccordionItem, setActiveAccordionItem] = useState<string | undefined>();
+  const [showIdealAnswer, setShowIdealAnswer] = useState(false);
 
 
   const { toast } = useToast();
 
-  const recognitionRef = useRef<CustomSpeechRecognition | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
-
-  useEffect(() => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      setIsSpeechRecognitionSupported(true);
-      const recognition = new SpeechRecognition();
-      recognitionRef.current = recognition;
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = "en-US";
-
-      let final_transcript = "";
-      recognition.onresult = (event: SpeechRecognitionEvent) => {
-        let interim_transcript = "";
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          if (event.results[i].isFinal) {
-            final_transcript += event.results[i][0].transcript;
-          } else {
-            interim_transcript += event.results[i][0].transcript;
-          }
-        }
-        setTranscript(final_transcript + interim_transcript);
-      };
-
-      recognition.onend = () => {
-        setIsListening(false);
-      };
-
-      recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-        console.error('Speech recognition error:', event.error);
-        setIsListening(false);
-        toast({
-          variant: "destructive",
-          title: "Speech Recognition Error",
-          description: `Error: ${event.error}`,
-        });
-      };
-
-      return () => {
-        if (recognitionRef.current) {
-          recognitionRef.current.stop();
-        }
-      };
-    } else {
-      console.warn("SpeechRecognition API is not supported in this browser.");
-    }
-  }, [toast]);
-  
-  const handleToggleListening = () => {
-    if (!recognitionRef.current) return;
-    if (isListening) {
-      recognitionRef.current.stop();
-    } else {
-      setTranscript("");
-      recognitionRef.current.start();
-    }
-    setIsListening(!isListening);
-  };
-  
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorderRef.current = new MediaRecorder(stream);
-      audioChunksRef.current = [];
-
-      mediaRecorderRef.current.ondataavailable = (event) => {
-        audioChunksRef.current.push(event.data);
-      };
-
-      mediaRecorderRef.current.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-        const url = URL.createObjectURL(audioBlob);
-        setAudioBlob(audioBlob);
-        setAudioURL(url);
-        stream.getTracks().forEach(track => track.stop());
-      };
-
-      mediaRecorderRef.current.start();
-      setIsRecording(true);
-    } catch (error) {
-      console.error("Microphone access denied:", error);
-      toast({
-        variant: "destructive",
-        title: "Microphone Error",
-        description: "Could not access microphone. Please check permissions.",
-      });
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorderRef.current) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-    }
-  };
-
-  const handleToggleRecording = () => {
-    if (isRecording) {
-      stopRecording();
-    } else {
-      clearAudio();
-      startRecording();
-    }
-  };
-
-  const handleDownloadRecording = () => {
-    if (audioURL) {
-      const a = document.createElement('a');
-      a.href = audioURL;
-      a.download = 'recording.webm';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    }
-  };
-  
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      clearAudio();
-      setAudioBlob(file);
-      setAudioURL(URL.createObjectURL(file));
-      setCurrentTab('upload');
-    }
-  };
-  
   const fileToDataUri = (file: Blob) =>
     new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
@@ -297,8 +102,7 @@ export default function SpeechAnalysisClient() {
 
     try {
       const resumeDataUri = await fileToDataUri(file);
-
-      // Perform extraction of structured data and plain text in parallel
+      
       const [structuredInfo, textInfo] = await Promise.all([
         extractResumeInfo({ resumeDataUri }),
         extractTextFromFile({ fileDataUri: resumeDataUri }),
@@ -323,19 +127,6 @@ export default function SpeechAnalysisClient() {
     }
   };
 
-  const clearAudio = () => {
-    setAudioBlob(null);
-    if(audioURL) {
-      URL.revokeObjectURL(audioURL);
-    }
-    setAudioURL(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-    if (isRecording) {
-      stopRecording();
-    }
-    audioChunksRef.current = [];
-  };
-
   const handleGenerateQuestions = async () => {
       if (!extractedResumeData || !resumeInfoText) {
           toast({ variant: "destructive", title: "No resume information to generate questions from." });
@@ -354,7 +145,7 @@ export default function SpeechAnalysisClient() {
               setGeneratedQuestions(result.questions);
               toast({
                   title: "Questions Generated",
-                  description: "Review the questions and ideal answers, then rehearse your response."
+                  description: "Select a question below to start practicing."
               });
           } else {
               toast({ variant: "destructive", title: "Could not generate questions." });
@@ -372,21 +163,6 @@ export default function SpeechAnalysisClient() {
   };
 
   const handleAnalyze = async () => {
-    let speechSample = "";
-    if (currentTab === "live") {
-      if (!transcript) {
-        toast({ variant: "destructive", title: "No transcription provided." });
-        return;
-      }
-      speechSample = transcript;
-    } else if (currentTab === 'record' || currentTab === 'upload') {
-        if (!audioBlob) {
-            toast({ variant: "destructive", title: "No audio provided." });
-            return;
-        }
-        speechSample = await fileToDataUri(audioBlob);
-    }
-
     if (!speechSample) {
         toast({ variant: "destructive", title: "No speech sample provided." });
         return;
@@ -396,14 +172,12 @@ export default function SpeechAnalysisClient() {
     
     if (mode === "Interview Mode") {
         if (!activeQuestion) {
-            toast({ variant: "destructive", title: "Please select a question to answer from the generated list." });
+            toast({ variant: "destructive", title: "Please select a question to answer." });
             return;
         }
         input.question = activeQuestion.question;
         input.perfectAnswer = activeQuestion.answer;
-        // In Interview mode, we switch the AI mode to "Rehearsal Mode" for evaluation
-        // so it performs the comparison against the perfect answer.
-        input.mode = "Rehearsal Mode";
+        input.mode = "Rehearsal Mode"; 
     }
 
     if (mode === "Rehearsal Mode") {
@@ -446,13 +220,13 @@ export default function SpeechAnalysisClient() {
     setExtractedResumeData(null);
     setGeneratedQuestions([]);
     setActiveQuestion(null);
+    setShowIdealAnswer(false);
   };
 
   const handleModeChange = (newMode: AnalysisMode) => {
     setMode(newMode);
-    setAnalysisResult(null); // Clear previous analysis
-    clearAudio();
-    setTranscript('');
+    setAnalysisResult(null);
+    setSpeechSample(null);
     if (newMode !== 'Interview Mode') {
       resetInterviewState();
     }
@@ -461,109 +235,6 @@ export default function SpeechAnalysisClient() {
       setPerfectAnswer('');
     }
   }
-  
-  const SpeechInput = () => (
-    <Card className="rounded-lg border shadow-lg bg-card/50 w-full">
-        <Tabs value={currentTab} onValueChange={(v) => { clearAudio(); setTranscript(""); setCurrentTab(v); }} className="w-full flex flex-col">
-            <CardHeader className="p-4 border-b">
-                <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="live">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" x2="12" y1="19" y2="22"></line></svg>
-                    Live
-                </TabsTrigger>
-                <TabsTrigger value="record">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M2 10v3"></path><path d="M6 6v11"></path><path d="M10 3v18"></path><path d="M14 8v7"></path><path d="M18 5v13"></path><path d="M22 10v3"></path></svg>
-                    Record
-                </TabsTrigger>
-                <TabsTrigger value="upload">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" x2="12" y1="3" y2="15"></line></svg>
-                    Upload
-                </TabsTrigger>
-                </TabsList>
-                <div className="pt-2 text-center">
-                    <p className="text-xs text-muted-foreground">Note: For best results, keep recordings to ~30 seconds.</p>
-                </div>
-            </CardHeader>
-            <div className="flex-grow">
-                <TabsContent value="live" className="mt-0">
-                    <CardContent className="p-4 flex flex-col">
-                        <Textarea
-                        placeholder="Your transcribed speech will appear here..."
-                        value={transcript}
-                        onChange={(e) => setTranscript(e.target.value)}
-                        className="h-32 resize-none bg-secondary/50 border-dashed flex-grow"
-                        readOnly={isListening}
-                        />
-                        <div className="flex items-center pt-4">
-                            <Button onClick={handleToggleListening} className="w-full" disabled={!isSpeechRecognitionSupported}>
-                                <Mic className="mr-2 h-5 w-5" />
-                                {isListening ? "Stop live transcription" : "Start live transcription"}
-                            </Button>
-                        </div>
-                    </CardContent>
-                </TabsContent>
-                    <TabsContent value="record" className="mt-0">
-                    <CardContent className="p-4 flex flex-col">
-                        <div className="flex-grow flex items-center justify-center">
-                            {audioURL ? (
-                                <div className="w-full space-y-4">
-                                    <audio controls src={audioURL} className="w-full"></audio>
-                                </div>
-                            ) : (
-                                <div className="flex flex-col items-center justify-center space-y-4 rounded-md border border-dashed bg-background h-32 w-full">
-                                    <p className="text-sm text-muted-foreground">{isRecording ? "Recording in progress..." : "Click button to start recording"}</p>
-                                </div>
-                            )}
-                        </div>
-                        <div className="flex items-center pt-4 gap-4">
-                                {audioURL ? (
-                                <>
-                                    <Button onClick={handleDownloadRecording} variant="secondary" className="w-full"><Download className="mr-2" /> Download</Button>
-                                    <Button onClick={clearAudio} variant="outline" className="w-full"><X className="mr-2" /> Clear</Button>
-                                </>
-                                ) : (
-                                <Button onClick={handleToggleRecording} variant={isRecording ? "destructive" : "default"} className="w-full">
-                                    <Mic className="mr-2 h-5 w-5" />
-                                    {isRecording ? "Stop Recording" : "Start Recording"}
-                                </Button>
-                                )}
-                        </div>
-                    </CardContent>
-                    </TabsContent>
-                    <TabsContent value="upload" className="mt-0">
-                        <CardContent className="p-4 flex flex-col">
-                        <div className="flex-grow flex items-center justify-center">
-                        {audioURL ? (
-                            <div className="w-full space-y-4">
-                                <audio controls src={audioURL} className="w-full"></audio>
-                                </div>
-                            ) : (
-                            <label htmlFor="audio-upload" className="w-full h-32 flex flex-col items-center justify-center p-6 border-2 border-dashed border-muted-foreground/30 rounded-lg cursor-pointer hover:bg-secondary/50 transition-colors">
-                                <Upload className="h-10 w-10 text-muted-foreground/50 mb-2"/>
-                                <p className="text-muted-foreground">Drop an audio file here or click.</p>
-                                <input id="audio-upload" type="file" accept="audio/*" onChange={handleFileChange} className="hidden" ref={fileInputRef}/>
-                            </label>
-                            )}
-                        </div>
-                            <div className="flex items-center pt-4">
-                            {audioURL ? (
-                                <Button onClick={clearAudio} variant="outline" className="w-full"><X className="mr-2" /> Clear Selection</Button>
-                            ) : (
-                                <Button asChild className="w-full">
-                                <label htmlFor="audio-upload">
-                                    <Upload className="mr-2 h-5 w-5" />
-                                    Browse Files
-                                </label>
-                                </Button>
-                            )}
-                        </div>
-                        </CardContent>
-                    </TabsContent>
-            </div>
-        </Tabs>
-    </Card>
-  );
-
 
   return (
     <div className="w-full max-w-7xl space-y-8">
@@ -599,86 +270,101 @@ export default function SpeechAnalysisClient() {
       </div>
       
       {mode === "Presentation Mode" && (
-        <div className="space-y-4">
-          <h2 className="font-headline text-2xl font-semibold">Provide Your Speech</h2>
-          <SpeechInput />
-        </div>
+        <Card className="rounded-lg border shadow-lg bg-card/50 w-full">
+            <CardHeader>
+                <CardTitle className="font-headline text-2xl">Provide Your Speech</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <SpeechInput onSpeechSampleReady={setSpeechSample} key="presentation" />
+            </CardContent>
+        </Card>
       )}
 
       {mode === "Rehearsal Mode" && (
         <div className="space-y-6">
-          <div className="space-y-4">
-            <h2 className="font-headline text-2xl font-semibold">Set Up Your Rehearsal</h2>
-            <Card className="bg-card/50">
-              <CardContent className="p-6 space-y-4">
-                <div className="space-y-2">
-                    <Label htmlFor="question" className="font-semibold">Interview Question</Label>
-                    <Textarea
-                        id="question"
-                        value={question}
-                        onChange={(e) => setQuestion(e.target.value)}
-                        placeholder="Enter the interview question here..."
-                        className="bg-background"
-                    />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="perfect-answer" className="font-semibold">Your Perfect Answer</Label>
-                    <Textarea
-                        id="perfect-answer"
-                        value={perfectAnswer}
-                        onChange={(e) => setPerfectAnswer(e.target.value)}
-                        placeholder="Provide an ideal or 'perfect' answer for comparison."
-                        className="bg-background"
-                    />
-                </div>
-              </CardContent>
+            <Card className="rounded-lg border shadow-lg bg-card/50 w-full">
+                <CardHeader>
+                    <CardTitle className="font-headline text-2xl">Set Up Your Rehearsal</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="question" className="font-semibold">Interview Question</Label>
+                        <Textarea
+                            id="question"
+                            value={question}
+                            onChange={(e) => setQuestion(e.target.value)}
+                            placeholder="Enter the interview question here..."
+                            className="bg-background"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="perfect-answer" className="font-semibold">Your Perfect Answer</Label>
+                        <Textarea
+                            id="perfect-answer"
+                            value={perfectAnswer}
+                            onChange={(e) => setPerfectAnswer(e.target.value)}
+                            placeholder="Provide an ideal or 'perfect' answer for comparison."
+                            className="bg-background"
+                        />
+                    </div>
+                </CardContent>
             </Card>
-          </div>
-          <div className="space-y-4">
-            <h2 className="font-headline text-2xl font-semibold">Provide Your Speech</h2>
-            <SpeechInput />
-          </div>
+
+            <Card className="rounded-lg border shadow-lg bg-card/50 w-full">
+                <CardHeader>
+                    <CardTitle className="font-headline text-2xl">Provide Your Speech</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <SpeechInput onSpeechSampleReady={setSpeechSample} key="rehearsal" />
+                </CardContent>
+            </Card>
         </div>
       )}
 
       {mode === "Interview Mode" && (
           <div className="space-y-6">
-              <div className="space-y-4">
-                  <h2 className="font-headline text-2xl font-semibold">1. Upload Resume</h2>
-                  {resumeFile ? (
-                      <div className="flex items-center justify-between rounded-md border bg-background p-3">
-                          <div className="flex items-center gap-2">
-                              <CheckCircle className="h-5 w-5 text-green-500" />
-                              <span className="text-sm font-medium">{resumeFile.name}</span>
+              <Card className="rounded-lg border shadow-lg bg-card/50 w-full">
+                  <CardHeader>
+                      <CardTitle className="font-headline text-2xl">Step 1: Upload Resume</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                      {resumeFile ? (
+                          <div className="flex items-center justify-between rounded-md border bg-background p-3">
+                              <div className="flex items-center gap-2">
+                                  <CheckCircle className="h-5 w-5 text-green-500" />
+                                  <span className="text-sm font-medium">{resumeFile.name}</span>
+                              </div>
+                              <Button variant="ghost" size="icon" onClick={resetInterviewState}>
+                                  <X className="h-4 w-4" />
+                              </Button>
                           </div>
-                          <Button variant="ghost" size="icon" onClick={resetInterviewState}>
-                              <X className="h-4 w-4" />
+                      ) : (
+                          <Button asChild variant="outline" className="w-full">
+                              <label htmlFor="resume-upload">
+                                  <FileText className="mr-2 h-4 w-4" />
+                                  Select Resume File (.pdf, .txt, .docx)
+                                  <input id="resume-upload" type="file" accept=".pdf,.txt,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={handleResumeFileChange} className="hidden" />
+                              </label>
                           </Button>
-                      </div>
-                  ) : (
-                      <Button asChild variant="outline" className="w-full">
-                          <label htmlFor="resume-upload">
-                              <FileText className="mr-2 h-4 w-4" />
-                              Select Resume File (.pdf, .txt, .docx)
-                              <input id="resume-upload" type="file" accept=".pdf,.txt,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={handleResumeFileChange} className="hidden" />
-                          </label>
-                      </Button>
-                  )}
-              </div>
-              
-              {(isLoading && loadingMessage.includes("Extracting")) && (
-                  <div className="flex items-center justify-center space-x-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <p className="text-sm text-muted-foreground">Extracting info...</p>
-                  </div>
-              )}
+                      )}
+                      {(isLoading && loadingMessage.includes("Extracting")) && (
+                        <div className="flex items-center justify-center space-x-2 mt-4">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <p className="text-sm text-muted-foreground">Extracting info...</p>
+                        </div>
+                      )}
+                  </CardContent>
+              </Card>
 
               {resumeInfoText && (
-                  <div className="space-y-4">
-                      <h2 className="font-headline text-2xl font-semibold">2. Generate Questions</h2>
+                  <Card className="rounded-lg border shadow-lg bg-card/50 w-full">
+                      <CardHeader>
+                          <CardTitle className="font-headline text-2xl">Step 2: Generate & Select Question</CardTitle>
+                      </CardHeader>
+                      <CardContent>
                           <Button 
                           onClick={handleGenerateQuestions}
-                          className="w-full" 
+                          className="w-full mb-4" 
                           disabled={isLoading && loadingMessage.includes("Generating")}>
                               {isLoading && loadingMessage.includes("Generating") ? (
                                   <>
@@ -686,49 +372,61 @@ export default function SpeechAnalysisClient() {
                                   Generating...
                                   </>
                               ) : "Generate Questions"}
-                      </Button>
-                  </div>
+                          </Button>
+
+                          {generatedQuestions.length > 0 && (
+                            <RadioGroup 
+                                onValueChange={(value) => {
+                                    const question = generatedQuestions.find(q => q.question === value);
+                                    setActiveQuestion(question || null);
+                                }}
+                                className="space-y-2 mt-4"
+                            >
+                                {generatedQuestions.map((q, index) => (
+                                    <div key={index} className="rounded-md border p-4 flex flex-col gap-4">
+                                        <div className="flex items-start gap-3">
+                                            <RadioGroupItem value={q.question} id={`q-${index}`} />
+                                            <Label htmlFor={`q-${index}`} className="font-semibold text-base cursor-pointer flex-grow">{q.question}</Label>
+                                        </div>
+
+                                        {activeQuestion?.question === q.question && (
+                                            <div className="pl-8 space-y-4">
+                                                <div className="flex items-center space-x-2">
+                                                    <Switch id={`show-answer-${index}`} checked={showIdealAnswer} onCheckedChange={setShowIdealAnswer} />
+                                                    <Label htmlFor={`show-answer-${index}`}>Show ideal answer</Label>
+                                                </div>
+                                                {showIdealAnswer && (
+                                                    <div className="text-sm text-muted-foreground italic p-3 bg-secondary/50 rounded-md border">
+                                                        {q.answer}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </RadioGroup>
+                          )}
+                      </CardContent>
+                  </Card>
               )}
 
-              {generatedQuestions.length > 0 && (
-                  <div className="space-y-4">
-                      <h2 className="font-headline text-2xl font-semibold">3. Answer a Question</h2>
-                      <p className="text-sm text-muted-foreground">Click a question to select it, then provide your answer below. The AI will evaluate how relevant your answer is to the selected question.</p>
-                      <Accordion type="single" collapsible className="w-full" value={activeAccordionItem} onValueChange={(value) => {
-                          setActiveAccordionItem(value);
-                          if (value) {
-                              const questionIndex = parseInt(value.split('-')[1]);
-                              setActiveQuestion(generatedQuestions[questionIndex] || null);
-                          } else {
-                              setActiveQuestion(null);
-                          }
-                      }}>
-                          {generatedQuestions.map((q, index) => (
-                          <AccordionItem value={`item-${index}`} key={index}>
-                              <AccordionTrigger className={cn("font-semibold text-left", activeQuestion?.question === q.question && "text-primary")}>{index + 1}. {q.question}</AccordionTrigger>
-                              <AccordionContent className="space-y-4">
-                                  <div>
-                                    <h4 className="font-semibold text-sm mb-2">Ideal Answer (for comparison):</h4>
-                                    <p className="text-sm text-muted-foreground italic p-3 bg-secondary/50 rounded-md">
-                                      {q.answer}
-                                    </p>
-                                  </div>
-                                  <div>
-                                     <h4 className="font-semibold text-sm mb-2">Provide Your Answer:</h4>
-                                     <SpeechInput/>
-                                  </div>
-                              </AccordionContent>
-                          </AccordionItem>
-                          ))}
-                      </Accordion>
-                  </div>
+              {activeQuestion && (
+                  <Card className="rounded-lg border shadow-lg bg-card/50 w-full">
+                      <CardHeader>
+                          <CardTitle className="font-headline text-2xl">Step 3: Provide Your Answer</CardTitle>
+                          <CardDescription>Now, provide your answer to the selected question: "{activeQuestion.question}"</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                          <SpeechInput onSpeechSampleReady={setSpeechSample} key={activeQuestion.question} />
+                      </CardContent>
+                  </Card>
               )}
           </div>
       )}
 
 
       <div className="flex justify-center py-6">
-        <Button onClick={handleAnalyze} size="lg" disabled={isLoading} className="w-full max-w-sm">
+        <Button onClick={handleAnalyze} size="lg" disabled={isLoading || !speechSample} className="w-full max-w-sm">
           {isLoading && loadingMessage.includes("Analyzing") ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -760,3 +458,5 @@ export default function SpeechAnalysisClient() {
     </div>
   );
 }
+
+    
