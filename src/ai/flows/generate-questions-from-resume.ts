@@ -42,6 +42,7 @@ export async function generateQuestionsFromResume(
 
 const prompt = ai.definePrompt({
   name: 'generateQuestionsFromResumePrompt',
+  model: 'googleai/gemini-1.5-flash-latest',
   input: {schema: GenerateQuestionsFromResumeInputSchema},
   output: {schema: GenerateQuestionsFromResumeOutputSchema},
   prompt: `You are an expert career coach and hiring manager. Based on the following resume text, generate exactly three common but important interview questions. One of the questions must be "Tell me about yourself". For each question, provide a strong, detailed, ideal answer that the candidate could give, tailored specifically to the content of their resume.
