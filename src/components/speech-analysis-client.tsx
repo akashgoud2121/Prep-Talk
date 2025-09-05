@@ -120,7 +120,7 @@ const modeOptions = [
         value: "Rehearsal Mode",
         icon: RehearsalIcon,
         title: "Rehearsal",
-        description: "Compares your answer against a 'perfect' answer you provide.",
+        description: "Paste a question and your 'perfect' answer, then record or transcribe your own response to compare.",
     }
 ];
 
