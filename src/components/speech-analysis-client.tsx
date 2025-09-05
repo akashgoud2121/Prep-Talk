@@ -346,13 +346,9 @@ export default function SpeechAnalysisClient() {
       setActiveQuestion(null);
 
       try {
-          const roles = extractedResumeData.experience?.map(e => `${e.jobTitle} at ${e.company}`).join(', ') || 'various roles';
-          const skills = extractedResumeData.skills?.slice(0, 5).join(', ') || 'various skills';
-          const projects = extractedResumeData.projects?.map(p => p.name).join(', ') || 'various projects';
-
-          const resumeSummary = `The candidate has worked in ${roles}. Key skills include: ${skills}. Notable projects: ${projects}.`;
+          const summary = extractedResumeData.summary || `The candidate's experience includes: ${extractedResumeData.experience?.map(e => e.jobTitle).join(', ')}.`;
           
-          const result = await generateQuestionsFromResume({ resumeSummary, resumeText: resumeInfoText });
+          const result = await generateQuestionsFromResume({ resumeSummary: summary, resumeText: resumeInfoText });
           if (result.questions && result.questions.length > 0) {
               setGeneratedQuestions(result.questions);
               toast({
@@ -738,3 +734,5 @@ export default function SpeechAnalysisClient() {
     </div>
   );
 }
+
+    
