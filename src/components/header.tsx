@@ -10,7 +10,7 @@ export default function Header() {
         <ThemeToggle />
       </div>
       <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-        Record or transcribe your speech to get AI-powered feedback on your delivery, language, and content. Choose a mode below and speak out!
+        Upload, record, or transcribe your speech to get AI-powered feedback on your delivery, language, and content. Choose a mode below and speak out!
       </p>
     </div>
   );
