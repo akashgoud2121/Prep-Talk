@@ -108,7 +108,7 @@ const modeOptions = [
         value: "Presentation Mode", 
         icon: PresentationIcon, 
         title: "Presentation",
-        description: "General-purpose analysis of structure, clarity, and engagement.",
+        description: "Deliver a presentation on any topic for general feedback and analysis.",
     },
     { 
         value: "Interview Mode",
