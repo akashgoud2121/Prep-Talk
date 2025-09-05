@@ -140,6 +140,7 @@ export default function SpeechAnalysisClient() {
   const [activeQuestion, setActiveQuestion] = useState<InterviewQuestion | null>(null);
   const [resumeInfoText, setResumeInfoText] = useState("");
   const [extractedResumeData, setExtractedResumeData] = useState<ExtractedResumeInfo | null>(null);
+  const [activeAccordionItem, setActiveAccordionItem] = useState<string | undefined>();
 
 
   const { toast } = useToast();
@@ -447,259 +448,284 @@ export default function SpeechAnalysisClient() {
     setActiveQuestion(null);
   };
 
+  const handleModeChange = (newMode: AnalysisMode) => {
+    setMode(newMode);
+    setAnalysisResult(null); // Clear previous analysis
+    clearAudio();
+    setTranscript('');
+    if (newMode !== 'Interview Mode') {
+      resetInterviewState();
+    }
+    if (newMode !== 'Rehearsal Mode') {
+      setQuestion('');
+      setPerfectAnswer('');
+    }
+  }
+  
+  const SpeechInput = () => (
+    <Card className="rounded-lg border shadow-lg bg-card/50 w-full">
+        <Tabs value={currentTab} onValueChange={(v) => { clearAudio(); setTranscript(""); setCurrentTab(v); }} className="w-full flex flex-col">
+            <CardHeader className="p-4 border-b">
+                <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="live">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" x2="12" y1="19" y2="22"></line></svg>
+                    Live
+                </TabsTrigger>
+                <TabsTrigger value="record">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M2 10v3"></path><path d="M6 6v11"></path><path d="M10 3v18"></path><path d="M14 8v7"></path><path d="M18 5v13"></path><path d="M22 10v3"></path></svg>
+                    Record
+                </TabsTrigger>
+                <TabsTrigger value="upload">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" x2="12" y1="3" y2="15"></line></svg>
+                    Upload
+                </TabsTrigger>
+                </TabsList>
+                <div className="pt-2 text-center">
+                    <p className="text-xs text-muted-foreground">Note: For best results, keep recordings to ~30 seconds.</p>
+                </div>
+            </CardHeader>
+            <div className="flex-grow">
+                <TabsContent value="live" className="mt-0">
+                    <CardContent className="p-4 flex flex-col">
+                        <Textarea
+                        placeholder="Your transcribed speech will appear here..."
+                        value={transcript}
+                        onChange={(e) => setTranscript(e.target.value)}
+                        className="h-32 resize-none bg-secondary/50 border-dashed flex-grow"
+                        readOnly={isListening}
+                        />
+                        <div className="flex items-center pt-4">
+                            <Button onClick={handleToggleListening} className="w-full" disabled={!isSpeechRecognitionSupported}>
+                                <Mic className="mr-2 h-5 w-5" />
+                                {isListening ? "Stop live transcription" : "Start live transcription"}
+                            </Button>
+                        </div>
+                    </CardContent>
+                </TabsContent>
+                    <TabsContent value="record" className="mt-0">
+                    <CardContent className="p-4 flex flex-col">
+                        <div className="flex-grow flex items-center justify-center">
+                            {audioURL ? (
+                                <div className="w-full space-y-4">
+                                    <audio controls src={audioURL} className="w-full"></audio>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center space-y-4 rounded-md border border-dashed bg-background h-32 w-full">
+                                    <p className="text-sm text-muted-foreground">{isRecording ? "Recording in progress..." : "Click button to start recording"}</p>
+                                </div>
+                            )}
+                        </div>
+                        <div className="flex items-center pt-4 gap-4">
+                                {audioURL ? (
+                                <>
+                                    <Button onClick={handleDownloadRecording} variant="secondary" className="w-full"><Download className="mr-2" /> Download</Button>
+                                    <Button onClick={clearAudio} variant="outline" className="w-full"><X className="mr-2" /> Clear</Button>
+                                </>
+                                ) : (
+                                <Button onClick={handleToggleRecording} variant={isRecording ? "destructive" : "default"} className="w-full">
+                                    <Mic className="mr-2 h-5 w-5" />
+                                    {isRecording ? "Stop Recording" : "Start Recording"}
+                                </Button>
+                                )}
+                        </div>
+                    </CardContent>
+                    </TabsContent>
+                    <TabsContent value="upload" className="mt-0">
+                        <CardContent className="p-4 flex flex-col">
+                        <div className="flex-grow flex items-center justify-center">
+                        {audioURL ? (
+                            <div className="w-full space-y-4">
+                                <audio controls src={audioURL} className="w-full"></audio>
+                                </div>
+                            ) : (
+                            <label htmlFor="audio-upload" className="w-full h-32 flex flex-col items-center justify-center p-6 border-2 border-dashed border-muted-foreground/30 rounded-lg cursor-pointer hover:bg-secondary/50 transition-colors">
+                                <Upload className="h-10 w-10 text-muted-foreground/50 mb-2"/>
+                                <p className="text-muted-foreground">Drop an audio file here or click.</p>
+                                <input id="audio-upload" type="file" accept="audio/*" onChange={handleFileChange} className="hidden" ref={fileInputRef}/>
+                            </label>
+                            )}
+                        </div>
+                            <div className="flex items-center pt-4">
+                            {audioURL ? (
+                                <Button onClick={clearAudio} variant="outline" className="w-full"><X className="mr-2" /> Clear Selection</Button>
+                            ) : (
+                                <Button asChild className="w-full">
+                                <label htmlFor="audio-upload">
+                                    <Upload className="mr-2 h-5 w-5" />
+                                    Browse Files
+                                </label>
+                                </Button>
+                            )}
+                        </div>
+                        </CardContent>
+                    </TabsContent>
+            </div>
+        </Tabs>
+    </Card>
+  );
+
 
   return (
     <div className="w-full max-w-7xl space-y-8">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-        <div className="w-full space-y-4">
-            <h2 className="flex items-center gap-3 font-headline text-2xl font-semibold">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">1</span>
-                Provide Your Speech
-            </h2>
-            <Card className="rounded-lg border shadow-lg bg-card/50 w-full h-full">
-                <Tabs value={currentTab} onValueChange={(v) => { clearAudio(); setTranscript(""); setCurrentTab(v); }} className="w-full flex flex-col h-full">
-                    <CardHeader className="p-4 border-b">
-                        <TabsList className="grid w-full grid-cols-3">
-                        <TabsTrigger value="live">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" x2="12" y1="19" y2="22"></line></svg>
-                            Live
-                        </TabsTrigger>
-                        <TabsTrigger value="record">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M2 10v3"></path><path d="M6 6v11"></path><path d="M10 3v18"></path><path d="M14 8v7"></path><path d="M18 5v13"></path><path d="M22 10v3"></path></svg>
-                            Record
-                        </TabsTrigger>
-                        <TabsTrigger value="upload">
-                            <svg xmlns="http://wwww3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" x2="12" y1="3" y2="15"></line></svg>
-                            Upload
-                        </TabsTrigger>
-                        </TabsList>
-                        <div className="pt-2 text-center">
-                            <p className="text-xs text-muted-foreground">Note: For best results, keep recordings to ~30 seconds.</p>
-                        </div>
-                    </CardHeader>
-                    <div className="flex-grow">
-                        <TabsContent value="live" className="h-full mt-0">
-                            <CardContent className="p-4 h-full flex flex-col">
-                                <Textarea
-                                placeholder="Your transcribed speech will appear here..."
-                                value={transcript}
-                                onChange={(e) => setTranscript(e.target.value)}
-                                className="h-48 resize-none bg-secondary/50 border-dashed flex-grow"
-                                readOnly={isListening}
-                                />
-                                <div className="flex items-center pt-4">
-                                    <Button onClick={handleToggleListening} className="w-full" size="lg" disabled={!isSpeechRecognitionSupported}>
-                                        <Mic className="mr-2 h-5 w-5" />
-                                        {isListening ? "Stop live transcription" : "Start live transcription"}
-                                    </Button>
-                                </div>
-                            </CardContent>
-                        </TabsContent>
-                         <TabsContent value="record" className="h-full mt-0">
-                            <CardContent className="p-4 h-full flex flex-col">
-                                <div className="flex-grow flex items-center justify-center">
-                                    {audioURL ? (
-                                        <div className="w-full space-y-4">
-                                            <audio controls src={audioURL} className="w-full"></audio>
-                                        </div>
-                                    ) : (
-                                        <div className="flex flex-col items-center justify-center space-y-4 rounded-md border border-dashed bg-background h-48 w-full">
-                                            <p className="text-sm text-muted-foreground">{isRecording ? "Recording in progress..." : "Click button to start recording"}</p>
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="flex items-center pt-4 gap-4">
-                                     {audioURL ? (
-                                        <>
-                                            <Button onClick={handleDownloadRecording} variant="secondary" className="w-full" size="lg"><Download className="mr-2" /> Download</Button>
-                                            <Button onClick={clearAudio} variant="outline" className="w-full" size="lg"><X className="mr-2" /> Clear</Button>
-                                        </>
-                                     ) : (
-                                        <Button onClick={handleToggleRecording} variant={isRecording ? "destructive" : "default"} size="lg" className="w-full">
-                                            <Mic className="mr-2 h-5 w-5" />
-                                            {isRecording ? "Stop Recording" : "Start Recording"}
-                                        </Button>
-                                     )}
-                               </div>
-                            </CardContent>
-                         </TabsContent>
-                         <TabsContent value="upload" className="h-full mt-0">
-                             <CardContent className="p-4 h-full flex flex-col">
-                                <div className="flex-grow flex items-center justify-center">
-                                {audioURL ? (
-                                    <div className="w-full space-y-4">
-                                        <audio controls src={audioURL} className="w-full"></audio>
-                                        </div>
-                                    ) : (
-                                    <label htmlFor="audio-upload" className="w-full h-48 flex flex-col items-center justify-center p-6 border-2 border-dashed border-muted-foreground/30 rounded-lg cursor-pointer hover:bg-secondary/50 transition-colors">
-                                        <Upload className="h-10 w-10 text-muted-foreground/50 mb-2"/>
-                                        <p className="text-muted-foreground">Drop an audio file here or click.</p>
-                                        <input id="audio-upload" type="file" accept="audio/*" onChange={handleFileChange} className="hidden" ref={fileInputRef}/>
-                                    </label>
-                                    )}
-                                </div>
-                                 <div className="flex items-center pt-4">
-                                    {audioURL ? (
-                                        <Button onClick={clearAudio} variant="outline" className="w-full" size="lg"><X className="mr-2" /> Clear Selection</Button>
-                                    ) : (
-                                        <Button asChild size="lg" className="w-full">
-                                        <label htmlFor="audio-upload">
-                                            <Upload className="mr-2 h-5 w-5" />
-                                            Browse Files
-                                        </label>
-                                        </Button>
-                                    )}
-                                </div>
-                             </CardContent>
-                         </TabsContent>
-                    </div>
-                </Tabs>
-            </Card>
-        </div>
-
-        <div className="w-full space-y-4">
-             <h2 className="flex items-center gap-3 font-headline text-2xl font-semibold">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">2</span>
-                Set Analysis Context
-            </h2>
-             <div className="space-y-4">
-                {modeOptions.map(option => {
-                    const isSelected = mode === option.value;
-                    return (
-                        <Card 
-                            key={option.value}
-                            onClick={() => {
-                                setMode(option.value as AnalysisMode);
-                                resetInterviewState();
-                                setQuestion("");
-                                setPerfectAnswer("");
-                            }}
-                            className={cn(
-                                "rounded-lg border-2 bg-card/50 p-4 transition-all cursor-pointer hover:shadow-lg",
-                                isSelected ? "border-primary shadow-md" : "border-muted hover:border-muted-foreground/50"
-                            )}
-                        >
-                            <div className="flex items-start gap-4">
-                               <div className={cn("flex-shrink-0 h-12 w-12 rounded-lg flex items-center justify-center bg-primary/10 text-primary", isSelected && "bg-primary text-primary-foreground")}>
-                                    <option.icon />
-                                </div>
-                                <div className="flex-grow">
-                                    <h3 className="font-bold">{option.title}</h3>
-                                    <p className="text-sm text-muted-foreground">{option.description}</p>
-                                </div>
+      <div className="space-y-4">
+        <h2 className="font-headline text-2xl font-semibold">
+            Select Analysis Context
+        </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {modeOptions.map(option => {
+                const isSelected = mode === option.value;
+                return (
+                    <Card 
+                        key={option.value}
+                        onClick={() => handleModeChange(option.value as AnalysisMode)}
+                        className={cn(
+                            "rounded-lg border-2 bg-card/50 p-4 transition-all cursor-pointer hover:shadow-lg",
+                            isSelected ? "border-primary shadow-md" : "border-muted hover:border-muted-foreground/50"
+                        )}
+                    >
+                        <div className="flex items-start gap-4">
+                            <div className={cn("flex-shrink-0 h-12 w-12 rounded-lg flex items-center justify-center bg-primary/10 text-primary", isSelected && "bg-primary text-primary-foreground")}>
+                                <option.icon />
                             </div>
-                            {isSelected && (
-                                 <div className="mt-4 space-y-4">
-                                    {option.value === "Interview Mode" && (
-                                        <div className="space-y-4">
-                                            <div className="space-y-2">
-                                                <Label htmlFor="resume-upload" className="font-semibold">1. Upload Resume</Label>
-                                                {resumeFile ? (
-                                                    <div className="flex items-center justify-between rounded-md border bg-background p-2">
-                                                        <div className="flex items-center gap-2">
-                                                            <CheckCircle className="h-5 w-5 text-green-500" />
-                                                            <span className="text-sm font-medium">{resumeFile.name}</span>
-                                                        </div>
-                                                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); resetInterviewState(); }}>
-                                                            <X className="h-4 w-4" />
-                                                        </Button>
-                                                    </div>
-                                                ) : (
-                                                    <Button asChild variant="outline" className="w-full" onClick={(e) => e.stopPropagation()}>
-                                                        <label htmlFor="resume-upload">
-                                                            <FileText className="mr-2 h-4 w-4" />
-                                                            Select Resume File (.pdf, .txt, .docx)
-                                                            <input id="resume-upload" type="file" accept=".pdf,.txt,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={handleResumeFileChange} className="hidden" />
-                                                        </label>
-                                                    </Button>
-                                                )}
-                                            </div>
-                                            
-                                            {(isLoading && loadingMessage.includes("Extracting")) && (
-                                                <div className="flex items-center justify-center space-x-2">
-                                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                                    <p className="text-sm text-muted-foreground">Extracting info...</p>
-                                                </div>
-                                            )}
-
-                                            {resumeInfoText && (
-                                                <div className="space-y-2">
-                                                    <Label className="font-semibold">2. Generate Questions</Label>
-                                                     <Button 
-                                                        onClick={(e) => { e.stopPropagation(); handleGenerateQuestions(); }} 
-                                                        className="w-full" 
-                                                        disabled={isLoading && loadingMessage.includes("Generating")}>
-                                                            {isLoading && loadingMessage.includes("Generating") ? (
-                                                                <>
-                                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                                Generating...
-                                                                </>
-                                                            ) : "Generate Questions"}
-                                                    </Button>
-                                                </div>
-                                            )}
-
-                                            {generatedQuestions.length > 0 && (
-                                                <div className="space-y-2">
-                                                    <Label className="font-semibold">3. Your Questions & Ideal Answers</Label>
-                                                    <p className="text-xs text-muted-foreground">Click a question to select it for your rehearsal session. The AI will evaluate how relevant your answer is to the selected question.</p>
-                                                    <Accordion type="single" collapsible className="w-full" onValueChange={(value) => {
-                                                        if (value) {
-                                                            const questionIndex = parseInt(value.split('-')[1]);
-                                                            setActiveQuestion(generatedQuestions[questionIndex] || null);
-                                                        } else {
-                                                            setActiveQuestion(null);
-                                                        }
-                                                    }}>
-                                                        {generatedQuestions.map((q, index) => (
-                                                        <AccordionItem value={`item-${index}`} key={index}>
-                                                            <AccordionTrigger className={cn("font-semibold text-left", activeQuestion?.question === q.question && "text-primary")} onClick={(e) => e.stopPropagation()}>{index + 1}. {q.question}</AccordionTrigger>
-                                                            <AccordionContent onClick={(e) => e.stopPropagation()}>
-                                                            <p className="text-sm text-muted-foreground italic">
-                                                                {q.answer}
-                                                            </p>
-                                                            </AccordionContent>
-                                                        </AccordionItem>
-                                                        ))}
-                                                    </Accordion>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                    {option.value === "Rehearsal Mode" && (
-                                       <>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="question" className="font-semibold">Interview Question</Label>
-                                            <Textarea
-                                                id="question"
-                                                value={question}
-                                                onChange={(e) => setQuestion(e.target.value)}
-                                                placeholder="Enter the interview question here..."
-                                                className="bg-background"
-                                                onClick={(e) => e.stopPropagation()}
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="perfect-answer" className="font-semibold">Your Perfect Answer</Label>
-                                            <Textarea
-                                                id="perfect-answer"
-                                                value={perfectAnswer}
-                                                onChange={(e) => setPerfectAnswer(e.target.value)}
-                                                placeholder="Provide an ideal or 'perfect' answer for comparison."
-                                                className="bg-background"
-                                                onClick={(e) => e.stopPropagation()}
-                                            />
-                                        </div>
-                                       </>
-                                    )}
-                                </div>
-                            )}
-                         </Card>
-                    )
-                })}
-            </div>
+                            <div className="flex-grow">
+                                <h3 className="font-bold">{option.title}</h3>
+                                <p className="text-sm text-muted-foreground">{option.description}</p>
+                            </div>
+                        </div>
+                    </Card>
+                )
+            })}
         </div>
       </div>
+      
+      {mode === "Presentation Mode" && (
+        <div className="space-y-4">
+          <h2 className="font-headline text-2xl font-semibold">Provide Your Speech</h2>
+          <SpeechInput />
+        </div>
+      )}
+
+      {mode === "Rehearsal Mode" && (
+        <div className="space-y-6">
+          <div className="space-y-4">
+            <h2 className="font-headline text-2xl font-semibold">Set Up Your Rehearsal</h2>
+            <Card className="bg-card/50">
+              <CardContent className="p-6 space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor="question" className="font-semibold">Interview Question</Label>
+                    <Textarea
+                        id="question"
+                        value={question}
+                        onChange={(e) => setQuestion(e.target.value)}
+                        placeholder="Enter the interview question here..."
+                        className="bg-background"
+                    />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="perfect-answer" className="font-semibold">Your Perfect Answer</Label>
+                    <Textarea
+                        id="perfect-answer"
+                        value={perfectAnswer}
+                        onChange={(e) => setPerfectAnswer(e.target.value)}
+                        placeholder="Provide an ideal or 'perfect' answer for comparison."
+                        className="bg-background"
+                    />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          <div className="space-y-4">
+            <h2 className="font-headline text-2xl font-semibold">Provide Your Speech</h2>
+            <SpeechInput />
+          </div>
+        </div>
+      )}
+
+      {mode === "Interview Mode" && (
+          <div className="space-y-6">
+              <div className="space-y-4">
+                  <h2 className="font-headline text-2xl font-semibold">1. Upload Resume</h2>
+                  {resumeFile ? (
+                      <div className="flex items-center justify-between rounded-md border bg-background p-3">
+                          <div className="flex items-center gap-2">
+                              <CheckCircle className="h-5 w-5 text-green-500" />
+                              <span className="text-sm font-medium">{resumeFile.name}</span>
+                          </div>
+                          <Button variant="ghost" size="icon" onClick={resetInterviewState}>
+                              <X className="h-4 w-4" />
+                          </Button>
+                      </div>
+                  ) : (
+                      <Button asChild variant="outline" className="w-full">
+                          <label htmlFor="resume-upload">
+                              <FileText className="mr-2 h-4 w-4" />
+                              Select Resume File (.pdf, .txt, .docx)
+                              <input id="resume-upload" type="file" accept=".pdf,.txt,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={handleResumeFileChange} className="hidden" />
+                          </label>
+                      </Button>
+                  )}
+              </div>
+              
+              {(isLoading && loadingMessage.includes("Extracting")) && (
+                  <div className="flex items-center justify-center space-x-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <p className="text-sm text-muted-foreground">Extracting info...</p>
+                  </div>
+              )}
+
+              {resumeInfoText && (
+                  <div className="space-y-4">
+                      <h2 className="font-headline text-2xl font-semibold">2. Generate Questions</h2>
+                          <Button 
+                          onClick={handleGenerateQuestions}
+                          className="w-full" 
+                          disabled={isLoading && loadingMessage.includes("Generating")}>
+                              {isLoading && loadingMessage.includes("Generating") ? (
+                                  <>
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  Generating...
+                                  </>
+                              ) : "Generate Questions"}
+                      </Button>
+                  </div>
+              )}
+
+              {generatedQuestions.length > 0 && (
+                  <div className="space-y-4">
+                      <h2 className="font-headline text-2xl font-semibold">3. Answer a Question</h2>
+                      <p className="text-sm text-muted-foreground">Click a question to select it, then provide your answer below. The AI will evaluate how relevant your answer is to the selected question.</p>
+                      <Accordion type="single" collapsible className="w-full" value={activeAccordionItem} onValueChange={(value) => {
+                          setActiveAccordionItem(value);
+                          if (value) {
+                              const questionIndex = parseInt(value.split('-')[1]);
+                              setActiveQuestion(generatedQuestions[questionIndex] || null);
+                          } else {
+                              setActiveQuestion(null);
+                          }
+                      }}>
+                          {generatedQuestions.map((q, index) => (
+                          <AccordionItem value={`item-${index}`} key={index}>
+                              <AccordionTrigger className={cn("font-semibold text-left", activeQuestion?.question === q.question && "text-primary")}>{index + 1}. {q.question}</AccordionTrigger>
+                              <AccordionContent className="space-y-4">
+                                  <div>
+                                    <h4 className="font-semibold text-sm mb-2">Ideal Answer (for comparison):</h4>
+                                    <p className="text-sm text-muted-foreground italic p-3 bg-secondary/50 rounded-md">
+                                      {q.answer}
+                                    </p>
+                                  </div>
+                                  <div>
+                                     <h4 className="font-semibold text-sm mb-2">Provide Your Answer:</h4>
+                                     <SpeechInput/>
+                                  </div>
+                              </AccordionContent>
+                          </AccordionItem>
+                          ))}
+                      </Accordion>
+                  </div>
+              )}
+          </div>
+      )}
+
 
       <div className="flex justify-center py-6">
         <Button onClick={handleAnalyze} size="lg" disabled={isLoading} className="w-full max-w-sm">
@@ -734,5 +760,3 @@ export default function SpeechAnalysisClient() {
     </div>
   );
 }
-
-    
