@@ -72,9 +72,13 @@ const analyzeSpeechFlow = ai.defineFlow(
   },
   async input => {
     const isAudio = input.speechSample.startsWith('data:audio');
+    
+    // In Interview mode, we are comparing against a perfect answer, which is the same as Rehearsal mode for the AI.
+    if(input.mode === 'Interview Mode' && input.perfectAnswer) {
+      input.mode = 'Rehearsal Mode';
+    }
+
     const {output} = await prompt({...input, isAudio});
     return output!;
   }
 );
-
-    

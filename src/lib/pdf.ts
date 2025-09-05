@@ -2,7 +2,30 @@
 import jsPDF from "jspdf";
 import type { AnalyzeSpeechOutput } from "@/ai/schemas";
 
-export const generatePdfReport = (data: AnalyzeSpeechOutput): void => {
+const getBase64Image = (url: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'Anonymous';
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                ctx.drawImage(img, 0, 0);
+                const dataURL = canvas.toDataURL('image/png');
+                resolve(dataURL);
+            } else {
+                reject(new Error('Could not get canvas context'));
+            }
+        };
+        img.onerror = reject;
+        img.src = url;
+    });
+};
+
+
+export const generatePdfReport = async (data: AnalyzeSpeechOutput): Promise<void> => {
   const doc = new jsPDF();
   const { metadata, evaluationCriteria, totalScore, overallAssessment, highlightedTranscription, suggestedSpeech } = data;
 
@@ -10,7 +33,7 @@ export const generatePdfReport = (data: AnalyzeSpeechOutput): void => {
     doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
   const pageWidth =
     doc.internal.pageSize.width || doc.internal.pageSize.getWidth();
-  let y = 20;
+  let y = 15;
   const margin = 15;
   const line_height = 7;
 
@@ -20,6 +43,22 @@ export const generatePdfReport = (data: AnalyzeSpeechOutput): void => {
       y = margin;
     }
   };
+
+  try {
+    const logoDataUri = await getBase64Image('/logo.png');
+    doc.addImage(logoDataUri, 'PNG', margin, y, 15, 15);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text("Cognisys AI", margin + 20, y + 10);
+  } catch (error) {
+    console.error("Could not add logo to PDF:", error);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text("Cognisys AI", margin, y + 10);
+  }
+
+  y += 30;
+
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(22);
@@ -143,6 +182,16 @@ export const generatePdfReport = (data: AnalyzeSpeechOutput): void => {
       checkY(evalLines.length * line_height);
       doc.text(evalLines, margin + 5, y);
       y += evalLines.length * line_height;
+
+      if (item.comparison) {
+          const comparisonLines = doc.splitTextToSize(
+            `Comparison: ${item.comparison}`,
+            pageWidth - margin * 2 - 5
+          );
+          checkY(comparisonLines.length * line_height);
+          doc.text(comparisonLines, margin + 5, y);
+          y += comparisonLines.length * line_height;
+      }
 
       const feedbackLines = doc.splitTextToSize(
         `Feedback: ${item.feedback}`,

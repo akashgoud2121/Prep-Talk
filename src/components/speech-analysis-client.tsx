@@ -208,9 +208,9 @@ export default function SpeechAnalysisClient() {
     }
   };
 
-  const handleDownloadPDF = useCallback(() => {
+  const handleDownloadPDF = useCallback(async () => {
     if (analysisResult) {
-      generatePdfReport(analysisResult);
+      await generatePdfReport(analysisResult);
     }
   }, [analysisResult]);
   
@@ -362,6 +362,7 @@ export default function SpeechAnalysisClient() {
                       <Card className="rounded-lg border shadow-lg bg-card/50 w-full">
                           <CardHeader>
                               <CardTitle className="font-headline text-2xl">Step 2: Generate & Select Question</CardTitle>
+                               <CardDescription>The AI will evaluate how relevant your answer is to the selected question.</CardDescription>
                           </CardHeader>
                           <CardContent>
                               <Button 
