@@ -143,6 +143,7 @@ export default function SpeechAnalysisClient() {
   const [generatedQuestions, setGeneratedQuestions] = useState<InterviewQuestion[]>([]);
   const [activeQuestion, setActiveQuestion] = useState<InterviewQuestion | null>(null);
   const [resumeInfoText, setResumeInfoText] = useState("");
+  const [extractedResumeData, setExtractedResumeData] = useState<ExtractedResumeInfo | null>(null);
 
 
   const { toast } = useToast();
@@ -288,7 +289,7 @@ export default function SpeechAnalysisClient() {
   const objectToText = (obj: ExtractedResumeInfo | null): string => {
     if (!obj) return "";
     let text = "";
-    if (obj.name) text += `Name: ${obj.name}\n`;
+    if (obj.name) text += `Name: ${obj.name}\n\n`;
     if (obj.summary) text += `Summary: ${obj.summary}\n\n`;
 
     if(obj.contact) {
@@ -347,12 +348,14 @@ export default function SpeechAnalysisClient() {
     setIsLoading(true);
     setLoadingMessage("Extracting resume info...");
     setResumeInfoText("");
+    setExtractedResumeData(null);
     setGeneratedQuestions([]);
     setActiveQuestion(null);
 
     try {
       const resumeDataUri = await fileToDataUri(file);
       const result = await extractResumeInfo({ resumeDataUri });
+      setExtractedResumeData(result);
       const resumeText = objectToText(result);
       setResumeInfoText(resumeText);
       toast({
@@ -385,7 +388,7 @@ export default function SpeechAnalysisClient() {
   };
 
   const handleGenerateQuestions = async () => {
-      if (!resumeInfoText) {
+      if (!extractedResumeData || !resumeInfoText) {
           toast({ variant: "destructive", title: "No resume information to generate questions from." });
           return;
       }
@@ -393,8 +396,15 @@ export default function SpeechAnalysisClient() {
       setLoadingMessage("Generating questions...");
       setGeneratedQuestions([]);
       setActiveQuestion(null);
+
       try {
-          const result = await generateQuestionsFromResume({ resumeText: resumeInfoText });
+          const roles = extractedResumeData.experience?.map(e => `${e.jobTitle} at ${e.company}`).join(', ') || 'various roles';
+          const skills = extractedResumeData.skills?.slice(0, 5).join(', ') || 'various skills';
+          const projects = extractedResumeData.projects?.map(p => p.name).join(', ') || 'various projects';
+
+          const resumeSummary = `The candidate has worked in ${roles}. Key skills include: ${skills}. Notable projects: ${projects}.`;
+
+          const result = await generateQuestionsFromResume({ resumeSummary, resumeText: resumeInfoText });
           if (result.questions && result.questions.length > 0) {
               setGeneratedQuestions(result.questions);
               toast({
@@ -404,12 +414,12 @@ export default function SpeechAnalysisClient() {
           } else {
               toast({ variant: "destructive", title: "Could not generate questions." });
           }
-      } catch (error) {
+      } catch (error: any) {
           console.error("Question generation failed:", error);
           toast({
               variant: "destructive",
               title: "Question Generation Failed",
-              description: "Could not generate questions from the provided info. Please try again.",
+              description: error.message || "Could not generate questions from the provided info. Please try again.",
           });
       } finally {
           setIsLoading(false);
@@ -488,6 +498,7 @@ export default function SpeechAnalysisClient() {
   const resetInterviewState = () => {
     setResumeFile(null);
     setResumeInfoText("");
+    setExtractedResumeData(null);
     setGeneratedQuestions([]);
     setActiveQuestion(null);
   };
