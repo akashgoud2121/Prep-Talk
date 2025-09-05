@@ -46,9 +46,9 @@ const HighlightedSegmentSchema = z.object({
 
 const AnalyzeSpeechInputSchema = z.object({
   speechSample: z.string().describe('The speech sample to analyze, either transcription or an audio data URI.'),
-  mode: z.enum(['Presentation Mode', 'Interview Mode', 'Practice Mode']).describe('The context for the analysis.'),
-  question: z.string().optional().describe('The interview question being answered, required for Interview Mode and Practice mode.'),
-  perfectAnswer: z.string().optional().describe('A perfect answer to compare against, required for Practice Mode.'),
+  mode: z.enum(['Presentation Mode', 'Interview Mode', 'Rehearsal Mode']).describe('The context for the analysis.'),
+  question: z.string().optional().describe('The interview question being answered, required for Interview Mode and Rehearsal mode.'),
+  perfectAnswer: z.string().optional().describe('A perfect answer to compare against, required for Rehearsal Mode.'),
 });
 
 export type AnalyzeSpeechInput = z.infer<typeof AnalyzeSpeechInputSchema>;
@@ -72,7 +72,7 @@ const AnalyzeSpeechOutputSchema = z.object({
       criteria: evaluationCriteriaEnum.describe('The specific evaluation criteria.'),
       score: z.number().min(0).max(10).describe('The score for the criteria (0-10).'),
       evaluation: z.string().describe('A brief evaluation of the speech sample against the criteria.'),
-      comparison: z.string().optional().describe("How the candidate's answer compares with the perfect answer. This is only required for Practice Mode."),
+      comparison: z.string().optional().describe("How the candidate's answer compares with the perfect answer. This is only required for Rehearsal Mode."),
       feedback: z.string().describe('Actionable feedback to improve the criteria.'),
     })
   ).describe('Detailed evaluation of the 15 specified criteria.'),

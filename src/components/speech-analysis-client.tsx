@@ -29,7 +29,7 @@ import { Label } from "@/components/ui/label";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 
-type AnalysisMode = "Presentation Mode" | "Interview Mode" | "Practice Mode";
+type AnalysisMode = "Presentation Mode" | "Interview Mode" | "Rehearsal Mode";
 
 // Define types for the SpeechRecognition API to fix TypeScript errors
 interface SpeechRecognitionResult {
@@ -99,7 +99,7 @@ const PresentationIcon = () => (
 const InterviewIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><path d="M8 12a2 2 0 0 0 2-2V8H8"></path><path d="M14 12a2 2 0 0 0 2-2V8h-2"></path></svg>
 );
-const PracticeIcon = () => (
+const RehearsalIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="00 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><path d="m9 14 2 2 4-4"></path></svg>
 );
 
@@ -114,12 +114,12 @@ const modeOptions = [
         value: "Interview Mode",
         icon: InterviewIcon,
         title: "Interview",
-        description: "Upload a resume to get tailored questions and practice your answers.",
+        description: "Upload a resume to get tailored questions and rehearse your answers.",
     },
     {
-        value: "Practice Mode",
-        icon: PracticeIcon,
-        title: "Practice",
+        value: "Rehearsal Mode",
+        icon: RehearsalIcon,
+        title: "Rehearsal",
         description: "Compares your answer against a 'perfect' answer you provide.",
     }
 ];
@@ -395,7 +395,7 @@ export default function SpeechAnalysisClient() {
               setGeneratedQuestions(result.questions);
               toast({
                   title: "Questions Generated",
-                  description: "Review the questions and ideal answers, then record your response."
+                  description: "Review the questions and ideal answers, then rehearse your response."
               });
           } else {
               toast({ variant: "destructive", title: "Could not generate questions." });
@@ -442,12 +442,12 @@ export default function SpeechAnalysisClient() {
         }
         input.question = activeQuestion.question;
         input.perfectAnswer = activeQuestion.answer;
-        // In Interview mode, we switch the AI mode to "Practice Mode" for evaluation
+        // In Interview mode, we switch the AI mode to "Rehearsal Mode" for evaluation
         // so it performs the comparison against the perfect answer.
-        input.mode = "Practice Mode";
+        input.mode = "Rehearsal Mode";
     }
 
-    if (mode === "Practice Mode") {
+    if (mode === "Rehearsal Mode") {
        if (!question || !perfectAnswer) {
          toast({ variant: "destructive", title: "Please enter both a question and a perfect answer." });
          return;
@@ -692,7 +692,7 @@ export default function SpeechAnalysisClient() {
                                             {generatedQuestions.length > 0 && (
                                                 <div className="space-y-2">
                                                     <Label className="font-semibold">3. Your Questions & Ideal Answers</Label>
-                                                    <p className="text-xs text-muted-foreground">Click a question to select it for your practice session.</p>
+                                                    <p className="text-xs text-muted-foreground">Click a question to select it for your rehearsal session.</p>
                                                     <Accordion type="single" collapsible className="w-full" onValueChange={(value) => {
                                                         const questionIndex = parseInt(value.split('-')[1]);
                                                         setActiveQuestion(generatedQuestions[questionIndex] || null);
@@ -712,7 +712,7 @@ export default function SpeechAnalysisClient() {
                                             )}
                                         </div>
                                     )}
-                                    {option.value === "Practice Mode" && (
+                                    {option.value === "Rehearsal Mode" && (
                                        <>
                                         <div className="space-y-2">
                                             <Label htmlFor="question" className="font-semibold">Interview Question</Label>
