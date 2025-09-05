@@ -15,6 +15,10 @@ import {
   generateQuestionsFromResume,
   InterviewQuestion,
 } from "@/ai/flows/generate-questions-from-resume";
+import {
+  extractResumeInfo,
+  ExtractedResumeInfo,
+} from "@/ai/flows/extract-resume-info";
 import AnalysisDashboard from "@/components/analysis-dashboard";
 import EmptyState from "@/components/empty-state";
 import { generatePdfReport } from "@/lib/pdf";
@@ -138,6 +142,8 @@ export default function SpeechAnalysisClient() {
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [generatedQuestions, setGeneratedQuestions] = useState<InterviewQuestion[]>([]);
   const [activeQuestion, setActiveQuestion] = useState<InterviewQuestion | null>(null);
+  const [resumeInfoText, setResumeInfoText] = useState("");
+
 
   const { toast } = useToast();
 
@@ -275,7 +281,7 @@ export default function SpeechAnalysisClient() {
     const file = event.target.files?.[0];
     if (file) {
       setResumeFile(file);
-      handleGenerateQuestions(file);
+      handleExtractResumeInfo(file);
     }
   };
 
@@ -308,18 +314,48 @@ export default function SpeechAnalysisClient() {
         reader.readAsText(file);
     });
 
-  const handleGenerateQuestions = async (file: File) => {
-      if (!file) {
-          toast({ variant: "destructive", title: "No resume file selected." });
+  const handleExtractResumeInfo = async (file: File) => {
+    if (!file) {
+      toast({ variant: "destructive", title: "No resume file selected." });
+      return;
+    }
+    setIsLoading(true);
+    setLoadingMessage("Extracting info from resume...");
+    setResumeInfoText("");
+    setGeneratedQuestions([]);
+    setActiveQuestion(null);
+    try {
+      const resumeText = await fileToText(file);
+      const result = await extractResumeInfo({ resumeText });
+      setResumeInfoText(JSON.stringify(result, null, 2));
+      toast({
+        title: "Resume Info Extracted",
+        description: "Review the extracted information below, then generate questions.",
+      });
+    } catch (error) {
+      console.error("Resume extraction failed:", error);
+      toast({
+        variant: "destructive",
+        title: "Resume Extraction Failed",
+        description: "Could not read or parse the resume. Please try again.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGenerateQuestions = async () => {
+      if (!resumeInfoText) {
+          toast({ variant: "destructive", title: "No resume information to generate questions from." });
           return;
       }
       setIsLoading(true);
-      setLoadingMessage("Generating questions from resume...");
+      setLoadingMessage("Generating questions...");
       setGeneratedQuestions([]);
       setActiveQuestion(null);
       try {
-          const resumeText = await fileToText(file);
-          const result = await generateQuestionsFromResume({ resumeText });
+          // Here we use the potentially edited text from the textarea
+          const result = await generateQuestionsFromResume({ resumeText: resumeInfoText });
           if (result.questions && result.questions.length > 0) {
               setGeneratedQuestions(result.questions);
               toast({
@@ -334,7 +370,7 @@ export default function SpeechAnalysisClient() {
           toast({
               variant: "destructive",
               title: "Question Generation Failed",
-              description: "Could not read resume or generate questions. Please try again.",
+              description: "Could not generate questions from the provided info. Please try again.",
           });
       } finally {
           setIsLoading(false);
@@ -410,6 +446,14 @@ export default function SpeechAnalysisClient() {
     }
   }, [analysisResult]);
   
+  const resetInterviewState = () => {
+    setResumeFile(null);
+    setResumeInfoText("");
+    setGeneratedQuestions([]);
+    setActiveQuestion(null);
+  };
+
+
   return (
     <div className="w-full max-w-7xl space-y-8">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
@@ -532,11 +576,9 @@ export default function SpeechAnalysisClient() {
                             key={option.value}
                             onClick={() => {
                                 setMode(option.value as AnalysisMode);
-                                setResumeFile(null);
-                                setGeneratedQuestions([]);
+                                resetInterviewState();
                                 setQuestion("");
                                 setPerfectAnswer("");
-                                setActiveQuestion(null);
                             }}
                             className={cn(
                                 "rounded-lg border-2 bg-card/50 p-4 transition-all cursor-pointer hover:shadow-lg",
@@ -557,14 +599,14 @@ export default function SpeechAnalysisClient() {
                                     {option.value === "Interview Mode" && (
                                         <div className="space-y-4">
                                             <div className="space-y-2">
-                                                <Label htmlFor="resume-upload" className="font-semibold">Upload Resume</Label>
+                                                <Label htmlFor="resume-upload" className="font-semibold">1. Upload Resume</Label>
                                                 {resumeFile ? (
                                                     <div className="flex items-center justify-between rounded-md border bg-background p-2">
                                                         <div className="flex items-center gap-2">
                                                             <CheckCircle className="h-5 w-5 text-green-500" />
                                                             <span className="text-sm font-medium">{resumeFile.name}</span>
                                                         </div>
-                                                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setResumeFile(null); setGeneratedQuestions([]); setActiveQuestion(null); }}>
+                                                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); resetInterviewState(); }}>
                                                             <X className="h-4 w-4" />
                                                         </Button>
                                                     </div>
@@ -579,16 +621,41 @@ export default function SpeechAnalysisClient() {
                                                 )}
                                             </div>
                                             
-                                            {isLoading && loadingMessage.includes("Generating") && (
+                                            {(isLoading && loadingMessage.includes("Extracting")) && (
                                                 <div className="flex items-center justify-center space-x-2">
                                                     <Loader2 className="h-4 w-4 animate-spin" />
-                                                    <p className="text-sm text-muted-foreground">Generating questions...</p>
+                                                    <p className="text-sm text-muted-foreground">Extracting information...</p>
+                                                </div>
+                                            )}
+
+                                            {resumeInfoText && (
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="resume-info" className="font-semibold">2. Review Extracted Information</Label>
+                                                    <Textarea 
+                                                        id="resume-info"
+                                                        value={resumeInfoText}
+                                                        onChange={(e) => setResumeInfoText(e.target.value)}
+                                                        rows={10}
+                                                        className="bg-background text-xs font-mono"
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    />
+                                                     <Button 
+                                                        onClick={(e) => { e.stopPropagation(); handleGenerateQuestions(); }} 
+                                                        className="w-full" 
+                                                        disabled={isLoading && loadingMessage.includes("Generating")}>
+                                                            {isLoading && loadingMessage.includes("Generating") ? (
+                                                                <>
+                                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                                Generating...
+                                                                </>
+                                                            ) : "Generate Questions from Info"}
+                                                    </Button>
                                                 </div>
                                             )}
 
                                             {generatedQuestions.length > 0 && (
                                                 <div className="space-y-2">
-                                                    <Label className="font-semibold">Your Questions & Ideal Answers</Label>
+                                                    <Label className="font-semibold">3. Your Questions & Ideal Answers</Label>
                                                     <p className="text-xs text-muted-foreground">Click a question to select it for your practice session.</p>
                                                     <Accordion type="single" collapsible className="w-full" onValueChange={(value) => {
                                                         const questionIndex = parseInt(value.split('-')[1]);
