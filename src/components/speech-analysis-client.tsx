@@ -358,12 +358,12 @@ export default function SpeechAnalysisClient() {
         title: "Resume Info Extracted",
         description: "Review the extracted information, then generate questions.",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Resume extraction failed:", error);
       toast({
         variant: "destructive",
         title: "Resume Extraction Failed",
-        description: "Could not read or parse the resume file. Please try again.",
+        description: error.message || "Could not read or parse the resume file. Please try again.",
       });
     } finally {
       setIsLoading(false);
@@ -652,8 +652,8 @@ export default function SpeechAnalysisClient() {
                                                     <Button asChild variant="outline" className="w-full" onClick={(e) => e.stopPropagation()}>
                                                         <label htmlFor="resume-upload">
                                                             <FileText className="mr-2 h-4 w-4" />
-                                                            Select Resume File (.pdf, .docx, .txt)
-                                                            <input id="resume-upload" type="file" accept=".txt,.pdf,.doc,.docx" onChange={handleResumeFileChange} className="hidden" />
+                                                            Select Resume File (.pdf, .txt)
+                                                            <input id="resume-upload" type="file" accept=".pdf,.txt" onChange={handleResumeFileChange} className="hidden" />
                                                         </label>
                                                     </Button>
                                                 )}
