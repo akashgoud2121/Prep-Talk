@@ -17,6 +17,7 @@ import {
 } from "@/ai/flows/generate-questions-from-resume";
 import {
   extractResumeInfo,
+  ExtractedResumeInfo,
 } from "@/ai/flows/extract-resume-info";
 import AnalysisDashboard from "@/components/analysis-dashboard";
 import EmptyState from "@/components/empty-state";
@@ -276,13 +277,66 @@ export default function SpeechAnalysisClient() {
     }
   };
   
-  const fileToText = (file: File) =>
+  const fileToDataUri = (file: Blob) =>
     new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (event) => resolve(event.target?.result as string);
-        reader.onerror = (error) => reject(error);
-        reader.readAsText(file);
+      const reader = new FileReader();
+      reader.onload = (event) => resolve(event.target?.result as string);
+      reader.onerror = (error) => reject(error);
+      reader.readAsDataURL(file);
     });
+  
+  const objectToText = (obj: ExtractedResumeInfo) => {
+    let text = "";
+    if (obj.name) text += `Name: ${obj.name}\n`;
+    if (obj.summary) text += `Summary: ${obj.summary}\n\n`;
+
+    if(obj.contact) {
+      text += "Contact:\n";
+      if (obj.contact.email) text += `  - Email: ${obj.contact.email}\n`;
+      if (obj.contact.phone) text += `  - Phone: ${obj.contact.phone}\n`;
+      if (obj.contact.linkedin) text += `  - LinkedIn: ${obj.contact.linkedin}\n`;
+      if (obj.contact.website) text += `  - Website: ${obj.contact.website}\n`;
+      text += "\n";
+    }
+
+    if (obj.experience && obj.experience.length > 0) {
+        text += "Experience:\n";
+        obj.experience.forEach(exp => {
+            text += `  - ${exp.jobTitle} at ${exp.company} (${exp.startDate} - ${exp.endDate || 'Present'})\n`;
+            exp.responsibilities.forEach(resp => {
+                text += `    - ${resp}\n`;
+            });
+        });
+        text += "\n";
+    }
+
+    if (obj.education && obj.education.length > 0) {
+        text += "Education:\n";
+        obj.education.forEach(edu => {
+            text += `  - ${edu.degree} in ${edu.major}, ${edu.institution} (${edu.graduationDate})\n`;
+        });
+        text += "\n";
+    }
+
+    if (obj.skills && obj.skills.length > 0) {
+        text += `Skills: ${obj.skills.join(', ')}\n\n`;
+    }
+    
+    if (obj.projects && obj.projects.length > 0) {
+        text += "Projects:\n";
+        obj.projects.forEach(proj => {
+            text += `  - ${proj.name}: ${proj.description}\n`;
+        });
+        text += "\n";
+    }
+
+    if (obj.certifications && obj.certifications.length > 0) {
+        text += `Certifications: ${obj.certifications.join(', ')}\n`;
+    }
+
+    return text.trim();
+};
+
 
   const handleResumeFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -290,24 +344,26 @@ export default function SpeechAnalysisClient() {
 
     setResumeFile(file);
     setIsLoading(true);
-    setLoadingMessage("Reading resume...");
+    setLoadingMessage("Extracting resume info...");
     setResumeInfoText("");
     setGeneratedQuestions([]);
     setActiveQuestion(null);
 
     try {
-      const text = await fileToText(file);
-      setResumeInfoText(text);
+      const resumeDataUri = await fileToDataUri(file);
+      const result = await extractResumeInfo({ resumeDataUri });
+      const resumeText = objectToText(result) || JSON.stringify(result, null, 2);
+      setResumeInfoText(resumeText);
       toast({
-        title: "Resume Content Loaded",
-        description: "Review the resume text below, then generate questions.",
+        title: "Resume Info Extracted",
+        description: "Review the extracted information, then generate questions.",
       });
     } catch (error) {
-      console.error("Resume reading failed:", error);
+      console.error("Resume extraction failed:", error);
       toast({
         variant: "destructive",
-        title: "Resume Reading Failed",
-        description: "Could not read the resume file. Please try a different file.",
+        title: "Resume Extraction Failed",
+        description: "Could not read or parse the resume file. Please try again.",
       });
     } finally {
       setIsLoading(false);
@@ -326,44 +382,6 @@ export default function SpeechAnalysisClient() {
     }
     audioChunksRef.current = [];
   };
-  
-  const fileToDataUri = (file: Blob) =>
-    new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (event) => resolve(event.target?.result as string);
-      reader.onerror = (error) => reject(error);
-      reader.readAsDataURL(file);
-    });
-
-  const handleExtractResumeInfo = async (file: File) => {
-    if (!file) {
-      toast({ variant: "destructive", title: "No resume file selected." });
-      return;
-    }
-    setIsLoading(true);
-    setLoadingMessage("Extracting info from resume...");
-    setResumeInfoText("");
-    setGeneratedQuestions([]);
-    setActiveQuestion(null);
-    try {
-      const resumeText = await fileToText(file);
-      const result = await extractResumeInfo({ resumeText });
-      setResumeInfoText(JSON.stringify(result, null, 2));
-      toast({
-        title: "Resume Info Extracted",
-        description: "Review the extracted information below, then generate questions.",
-      });
-    } catch (error) {
-      console.error("Resume extraction failed:", error);
-      toast({
-        variant: "destructive",
-        title: "Resume Extraction Failed",
-        description: "Could not read or parse the resume. Please try again.",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleGenerateQuestions = async () => {
       if (!resumeInfoText) {
@@ -375,7 +393,6 @@ export default function SpeechAnalysisClient() {
       setGeneratedQuestions([]);
       setActiveQuestion(null);
       try {
-          // Here we use the potentially edited text from the textarea
           const result = await generateQuestionsFromResume({ resumeText: resumeInfoText });
           if (result.questions && result.questions.length > 0) {
               setGeneratedQuestions(result.questions);
@@ -635,23 +652,23 @@ export default function SpeechAnalysisClient() {
                                                     <Button asChild variant="outline" className="w-full" onClick={(e) => e.stopPropagation()}>
                                                         <label htmlFor="resume-upload">
                                                             <FileText className="mr-2 h-4 w-4" />
-                                                            Select Resume File
+                                                            Select Resume File (.pdf, .docx, .txt)
                                                             <input id="resume-upload" type="file" accept=".txt,.pdf,.doc,.docx" onChange={handleResumeFileChange} className="hidden" />
                                                         </label>
                                                     </Button>
                                                 )}
                                             </div>
                                             
-                                            {(isLoading && loadingMessage.includes("Reading resume...")) && (
+                                            {(isLoading && loadingMessage.includes("Extracting")) && (
                                                 <div className="flex items-center justify-center space-x-2">
                                                     <Loader2 className="h-4 w-4 animate-spin" />
-                                                    <p className="text-sm text-muted-foreground">Reading resume...</p>
+                                                    <p className="text-sm text-muted-foreground">Extracting info...</p>
                                                 </div>
                                             )}
 
                                             {resumeInfoText && (
                                                 <div className="space-y-2">
-                                                    <Label htmlFor="resume-info" className="font-semibold">2. Review Resume Content</Label>
+                                                    <Label htmlFor="resume-info" className="font-semibold">2. Review Extracted Information</Label>
                                                     <Textarea 
                                                         id="resume-info"
                                                         value={resumeInfoText}
