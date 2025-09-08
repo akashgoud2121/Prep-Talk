@@ -34,7 +34,7 @@ export const generatePdfReport = async (data: AnalyzeSpeechOutput): Promise<void
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(14);
-  doc.text("Speech Analysis Assistant", pageWidth / 2, y + 22, { align: "center" });
+  doc.text("Prep Talk", pageWidth / 2, y + 22, { align: "center" });
   
   y += 35;
 

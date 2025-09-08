@@ -6,7 +6,7 @@ export default function Header() {
     <div className="w-full max-w-7xl text-center mb-12">
        <div className="flex justify-center items-center gap-4 mb-2">
         <h1 className="font-headline text-4xl md:text-5xl font-bold text-primary">
-          🎙️ Speech Analysis Assistant
+          🎙️ Prep Talk
         </h1>
         <ThemeToggle />
       </div>
