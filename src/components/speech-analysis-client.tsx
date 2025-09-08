@@ -61,7 +61,7 @@ const modeOptions = [
         value: "Rehearsal Mode",
         icon: RehearsalIcon,
         title: "Rehearsal",
-        description: "Rehearse a specific answer. Provide a question and an ideal answer to compare your response against.",
+        description: "Enter a question and perfect answer, record your response, and get instant analysis.",
     }
 ];
 
