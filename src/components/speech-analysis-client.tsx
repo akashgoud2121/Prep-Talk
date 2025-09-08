@@ -49,7 +49,7 @@ const modeOptions = [
         value: "Presentation Mode", 
         icon: PresentationIcon, 
         title: "Presentation",
-        description: "Get a live transcription of your speech. Use this to test your microphone and see what you say appear in real-time.",
+        description: "Practice a presentation or speech on any topic. The AI will provide a full analysis of your delivery, language, and content.",
     },
     { 
         value: "Interview Mode",
