@@ -49,7 +49,7 @@ const modeOptions = [
         value: "Presentation Mode", 
         icon: PresentationIcon, 
         title: "Presentation",
-        description: "Present on any topic. Get instant feedback on your delivery, language, and content.",
+        description: "Get a live transcription of your speech. Use this to test your microphone and see what you say appear in real-time.",
     },
     { 
         value: "Interview Mode",
