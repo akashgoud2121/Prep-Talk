@@ -45,31 +45,20 @@ export const generatePdfReport = async (data: AnalyzeSpeechOutput): Promise<void
   };
 
   try {
-    const logoDataUri = await getBase64Image('/logo.png');
-    doc.addImage(logoDataUri, 'PNG', margin, y, 15, 15);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(16);
-    doc.text("Cognisys AI", margin + 20, y + 10);
+    const logoUrl = 'https://media.licdn.com/dms/image/v2/D560BAQFK4uppQGwRcg/company-logo_200_200/company-logo_200_200/0/1735737431638?e=1759968000&v=beta&t=K2Xh4e_oAMJ3lcIfYmknNr_I1qmAWRBTv1WgA7BIWYA';
+    const logoDataUri = await getBase64Image(logoUrl);
+    doc.addImage(logoDataUri, 'PNG', margin, y, 20, 20);
   } catch (error) {
     console.error("Could not add logo to PDF:", error);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(16);
-    doc.text("Cognisys AI", margin, y + 10);
   }
-
-  y += 30;
-
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(22);
-  doc.text(
-    "Verbal Insights: Speech Analysis Report",
-    pageWidth / 2,
-    y,
-    { align: "center" }
-  );
-  y += line_height * 2;
+  doc.text("Cognisys AI", pageWidth / 2, y + 15, { align: "center" });
 
+  y += 30;
+
+  doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
   doc.text("Overall Assessment", margin, y);
   y += line_height;
@@ -223,5 +212,5 @@ export const generatePdfReport = async (data: AnalyzeSpeechOutput): Promise<void
     y += suggestedLines.length * line_height;
   }
 
-  doc.save("verbal-insights-report.pdf");
+  doc.save("cognisys-ai-report.pdf");
 };
