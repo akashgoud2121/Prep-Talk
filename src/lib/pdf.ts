@@ -1,29 +1,7 @@
 
 import jsPDF from "jspdf";
 import type { AnalyzeSpeechOutput } from "@/ai/schemas";
-
-const getBase64Image = (url: string): Promise<string> => {
-    return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.crossOrigin = 'Anonymous';
-        img.onload = () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = img.width;
-            canvas.height = img.height;
-            const ctx = canvas.getContext('2d');
-            if (ctx) {
-                ctx.drawImage(img, 0, 0);
-                const dataURL = canvas.toDataURL('image/png');
-                resolve(dataURL);
-            } else {
-                reject(new Error('Could not get canvas context'));
-            }
-        };
-        img.onerror = reject;
-        img.src = url;
-    });
-};
-
+import { cognisysLogoBase64 } from "@/assets/cognisys-logo";
 
 export const generatePdfReport = async (data: AnalyzeSpeechOutput): Promise<void> => {
   const doc = new jsPDF();
@@ -45,9 +23,7 @@ export const generatePdfReport = async (data: AnalyzeSpeechOutput): Promise<void
   };
 
   try {
-    const logoUrl = 'https://media.licdn.com/dms/image/v2/D560BAQFK4uppQGwRcg/company-logo_200_200/company-logo_200_200/0/1735737431638?e=1759968000&v=beta&t=K2Xh4e_oAMJ3lcIfYmknNr_I1qmAWRBTv1WgA7BIWYA';
-    const logoDataUri = await getBase64Image(logoUrl);
-    doc.addImage(logoDataUri, 'PNG', margin, y, 20, 20);
+    doc.addImage(cognisysLogoBase64, 'PNG', margin, y, 20, 20);
   } catch (error) {
     console.error("Could not add logo to PDF:", error);
   }
