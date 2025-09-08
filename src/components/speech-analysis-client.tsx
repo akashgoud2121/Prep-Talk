@@ -28,6 +28,12 @@ import SpeechInput from "./speech-input";
 
 type AnalysisMode = "Presentation Mode" | "Interview Mode" | "Rehearsal Mode";
 
+const StepCircle = ({ number }: { number: number }) => (
+  <div className="flex-shrink-0 h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg">
+    {number}
+  </div>
+);
+
 const PresentationIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><path d="M2 3h20"></path><path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3"></path><path d="m7 21 5-5 5 5"></path></svg>
 );
@@ -241,9 +247,12 @@ export default function SpeechAnalysisClient() {
     <div className="w-full max-w-7xl space-y-8">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
         <div className="space-y-4">
-            <h2 className="font-headline text-2xl font-semibold">
-                Step 1: Select Analysis Context
-            </h2>
+            <div className="flex items-center gap-4">
+              <StepCircle number={1} />
+              <h2 className="font-headline text-2xl font-semibold">
+                Select Analysis Context
+              </h2>
+            </div>
             <div className="grid grid-cols-1 gap-4">
                 {modeOptions.map(option => {
                     const isSelected = mode === option.value;
@@ -275,7 +284,10 @@ export default function SpeechAnalysisClient() {
           {mode === "Presentation Mode" && (
             <Card className="rounded-lg border shadow-lg bg-card/50 w-full">
                 <CardHeader>
-                    <CardTitle className="font-headline text-2xl">Step 2: Provide Your Speech</CardTitle>
+                    <CardTitle className="font-headline text-2xl flex items-center gap-4">
+                      <StepCircle number={2} />
+                      <span>Provide Your Speech</span>
+                    </CardTitle>
                 </CardHeader>
                 <CardContent>
                     <SpeechInput onSpeechSampleReady={setSpeechSample} key="presentation" />
@@ -287,7 +299,10 @@ export default function SpeechAnalysisClient() {
             <div className="space-y-6">
                 <Card className="rounded-lg border shadow-lg bg-card/50 w-full">
                     <CardHeader>
-                        <CardTitle className="font-headline text-2xl">Step 2: Set Up Your Rehearsal</CardTitle>
+                        <CardTitle className="font-headline text-2xl flex items-center gap-4">
+                          <StepCircle number={2} />
+                          <span>Set Up Your Rehearsal</span>
+                        </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
@@ -315,7 +330,10 @@ export default function SpeechAnalysisClient() {
 
                 <Card className="rounded-lg border shadow-lg bg-card/50 w-full">
                     <CardHeader>
-                        <CardTitle className="font-headline text-2xl">Step 3: Provide Your Speech</CardTitle>
+                        <CardTitle className="font-headline text-2xl flex items-center gap-4">
+                          <StepCircle number={3} />
+                          <span>Provide Your Speech</span>
+                        </CardTitle>
                     </CardHeader>
                     <CardContent>
                         {isRehearsalReady ? (
@@ -334,7 +352,10 @@ export default function SpeechAnalysisClient() {
               <div className="space-y-6">
                   <Card className="rounded-lg border shadow-lg bg-card/50 w-full">
                       <CardHeader>
-                          <CardTitle className="font-headline text-2xl">Step 2: Upload Resume</CardTitle>
+                          <CardTitle className="font-headline text-2xl flex items-center gap-4">
+                            <StepCircle number={2} />
+                            <span>Upload Resume</span>
+                          </CardTitle>
                       </CardHeader>
                       <CardContent>
                           {resumeFile ? (
@@ -368,7 +389,10 @@ export default function SpeechAnalysisClient() {
                   {resumeInfoText && (
                       <Card className="rounded-lg border shadow-lg bg-card/50 w-full">
                           <CardHeader>
-                              <CardTitle className="font-headline text-2xl">Step 3: Generate &amp; Select Question</CardTitle>
+                              <CardTitle className="font-headline text-2xl flex items-center gap-4">
+                                <StepCircle number={3} />
+                                <span>Generate &amp; Select Question</span>
+                              </CardTitle>
                                <CardDescription>The AI will evaluate how relevant your answer is to the selected question.</CardDescription>
                           </CardHeader>
                           <CardContent>
@@ -423,7 +447,10 @@ export default function SpeechAnalysisClient() {
                   {activeQuestion && (
                       <Card className="rounded-lg border shadow-lg bg-card/50 w-full">
                           <CardHeader>
-                              <CardTitle className="font-headline text-2xl">Step 4: Provide Your Answer</CardTitle>
+                              <CardTitle className="font-headline text-2xl flex items-center gap-4">
+                                <StepCircle number={4} />
+                                <span>Provide Your Answer</span>
+                              </CardTitle>
                               <CardDescription>Now, provide your answer to the selected question: "{activeQuestion.question}"</CardDescription>
                           </CardHeader>
                           <CardContent>
@@ -470,3 +497,5 @@ export default function SpeechAnalysisClient() {
     </div>
   );
 }
+
+    
