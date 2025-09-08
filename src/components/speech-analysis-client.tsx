@@ -177,7 +177,6 @@ export default function SpeechAnalysisClient() {
         }
         input.question = activeQuestion.question;
         input.perfectAnswer = activeQuestion.answer;
-        input.mode = "Rehearsal Mode"; 
     }
 
     if (mode === "Rehearsal Mode") {
@@ -234,7 +233,7 @@ export default function SpeechAnalysisClient() {
       setQuestion('');
       setPerfectAnswer('');
     }
-  }
+  };
 
   return (
     <div className="w-full max-w-7xl space-y-8">
