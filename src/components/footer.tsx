@@ -10,7 +10,7 @@ export default function Footer() {
         <div className="flex flex-col items-center md:items-start space-y-3">
           <div className="flex items-center gap-3">
             <Image
-              src="/logo.png"
+              src="https://media.licdn.com/dms/image/v2/D560BAQFK4uppQGwRcg/company-logo_200_200/company-logo_200_200/0/1735737431638?e=1759968000&v=beta&t=K2Xh4e_oAMJ3lcIfYmknNr_I1qmAWRBTv1WgA7BIWYA"
               alt="Cognisys AI Logo"
               width={32}
               height={32}
