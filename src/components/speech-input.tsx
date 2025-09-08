@@ -75,9 +75,9 @@ interface SpeechInputProps {
 }
 
 const tabDescriptions: Record<string, string> = {
-    live: "See a real-time transcription as you speak to test your microphone.",
-    record: "Record your speech directly in the browser.",
-    upload: "Upload a pre-existing audio file for analysis."
+    live: "See a real-time transcription as you speak to test your microphone. Note: For best results, keep recordings to ~30 seconds.",
+    record: "Record your speech directly in the browser. Note: For best results, keep recordings to ~30 seconds.",
+    upload: "Upload a pre-existing audio file for analysis. Note: For best results, keep recordings to ~30 seconds."
 };
 
 export default function SpeechInput({ onSpeechSampleReady }: SpeechInputProps) {
