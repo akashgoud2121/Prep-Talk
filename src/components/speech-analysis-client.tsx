@@ -234,6 +234,8 @@ export default function SpeechAnalysisClient() {
       setPerfectAnswer('');
     }
   };
+  
+  const isRehearsalReady = mode === 'Rehearsal Mode' && !!question && !!perfectAnswer;
 
   return (
     <div className="w-full max-w-7xl space-y-8">
@@ -316,7 +318,13 @@ export default function SpeechAnalysisClient() {
                         <CardTitle className="font-headline text-2xl">Provide Your Speech</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <SpeechInput onSpeechSampleReady={setSpeechSample} key="rehearsal" />
+                        {isRehearsalReady ? (
+                          <SpeechInput onSpeechSampleReady={setSpeechSample} key="rehearsal" />
+                        ) : (
+                          <div className="text-center text-muted-foreground p-4 bg-secondary rounded-md">
+                            Please provide a question and a perfect answer above to enable speech input.
+                          </div>
+                        )}
                     </CardContent>
                 </Card>
             </div>
@@ -360,7 +368,7 @@ export default function SpeechAnalysisClient() {
                   {resumeInfoText && (
                       <Card className="rounded-lg border shadow-lg bg-card/50 w-full">
                           <CardHeader>
-                              <CardTitle className="font-headline text-2xl">Step 2: Generate & Select Question</CardTitle>
+                              <CardTitle className="font-headline text-2xl">Step 2: Generate &amp; Select Question</CardTitle>
                                <CardDescription>The AI will evaluate how relevant your answer is to the selected question.</CardDescription>
                           </CardHeader>
                           <CardContent>
