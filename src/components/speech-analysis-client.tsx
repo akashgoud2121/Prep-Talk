@@ -242,7 +242,7 @@ export default function SpeechAnalysisClient() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
         <div className="space-y-4">
             <h2 className="font-headline text-2xl font-semibold">
-                Select Analysis Context
+                Step 1: Select Analysis Context
             </h2>
             <div className="grid grid-cols-1 gap-4">
                 {modeOptions.map(option => {
@@ -275,7 +275,7 @@ export default function SpeechAnalysisClient() {
           {mode === "Presentation Mode" && (
             <Card className="rounded-lg border shadow-lg bg-card/50 w-full">
                 <CardHeader>
-                    <CardTitle className="font-headline text-2xl">Provide Your Speech</CardTitle>
+                    <CardTitle className="font-headline text-2xl">Step 2: Provide Your Speech</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <SpeechInput onSpeechSampleReady={setSpeechSample} key="presentation" />
@@ -287,7 +287,7 @@ export default function SpeechAnalysisClient() {
             <div className="space-y-6">
                 <Card className="rounded-lg border shadow-lg bg-card/50 w-full">
                     <CardHeader>
-                        <CardTitle className="font-headline text-2xl">Set Up Your Rehearsal</CardTitle>
+                        <CardTitle className="font-headline text-2xl">Step 2: Set Up Your Rehearsal</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
@@ -315,7 +315,7 @@ export default function SpeechAnalysisClient() {
 
                 <Card className="rounded-lg border shadow-lg bg-card/50 w-full">
                     <CardHeader>
-                        <CardTitle className="font-headline text-2xl">Provide Your Speech</CardTitle>
+                        <CardTitle className="font-headline text-2xl">Step 3: Provide Your Speech</CardTitle>
                     </CardHeader>
                     <CardContent>
                         {isRehearsalReady ? (
@@ -334,7 +334,7 @@ export default function SpeechAnalysisClient() {
               <div className="space-y-6">
                   <Card className="rounded-lg border shadow-lg bg-card/50 w-full">
                       <CardHeader>
-                          <CardTitle className="font-headline text-2xl">Step 1: Upload Resume</CardTitle>
+                          <CardTitle className="font-headline text-2xl">Step 2: Upload Resume</CardTitle>
                       </CardHeader>
                       <CardContent>
                           {resumeFile ? (
@@ -368,7 +368,7 @@ export default function SpeechAnalysisClient() {
                   {resumeInfoText && (
                       <Card className="rounded-lg border shadow-lg bg-card/50 w-full">
                           <CardHeader>
-                              <CardTitle className="font-headline text-2xl">Step 2: Generate &amp; Select Question</CardTitle>
+                              <CardTitle className="font-headline text-2xl">Step 3: Generate &amp; Select Question</CardTitle>
                                <CardDescription>The AI will evaluate how relevant your answer is to the selected question.</CardDescription>
                           </CardHeader>
                           <CardContent>
@@ -423,7 +423,7 @@ export default function SpeechAnalysisClient() {
                   {activeQuestion && (
                       <Card className="rounded-lg border shadow-lg bg-card/50 w-full">
                           <CardHeader>
-                              <CardTitle className="font-headline text-2xl">Step 3: Provide Your Answer</CardTitle>
+                              <CardTitle className="font-headline text-2xl">Step 4: Provide Your Answer</CardTitle>
                               <CardDescription>Now, provide your answer to the selected question: "{activeQuestion.question}"</CardDescription>
                           </CardHeader>
                           <CardContent>
