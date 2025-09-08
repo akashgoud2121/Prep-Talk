@@ -74,6 +74,12 @@ interface SpeechInputProps {
   onSpeechSampleReady: (sample: string | null) => void;
 }
 
+const tabDescriptions: Record<string, string> = {
+    live: "See a real-time transcription as you speak to test your microphone.",
+    record: "Record your speech directly in the browser.",
+    upload: "Upload a pre-existing audio file for analysis."
+};
+
 export default function SpeechInput({ onSpeechSampleReady }: SpeechInputProps) {
   const [transcript, setTranscript] = useState("");
   const [isListening, setIsListening] = useState(false);
@@ -270,8 +276,8 @@ export default function SpeechInput({ onSpeechSampleReady }: SpeechInputProps) {
                 Upload
             </TabsTrigger>
             </TabsList>
-            <div className="pt-2 text-center">
-                <p className="text-xs text-muted-foreground">Note: For best results, keep recordings to ~30 seconds.</p>
+            <div className="pt-2 text-center h-8 flex items-center justify-center">
+                <p className="text-xs text-muted-foreground">{tabDescriptions[currentTab]}</p>
             </div>
         </CardHeader>
         <div className="flex-grow">
@@ -353,5 +359,7 @@ export default function SpeechInput({ onSpeechSampleReady }: SpeechInputProps) {
     </Tabs>
   )
 }
+
+    
 
     
