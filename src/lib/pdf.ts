@@ -32,7 +32,11 @@ export const generatePdfReport = async (data: AnalyzeSpeechOutput): Promise<void
   doc.setFontSize(22);
   doc.text("Cognisys AI", pageWidth / 2, y + 15, { align: "center" });
 
-  y += 30;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(14);
+  doc.text("Speech Analysis Assistant", pageWidth / 2, y + 22, { align: "center" });
+  
+  y += 35;
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
