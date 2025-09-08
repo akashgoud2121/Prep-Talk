@@ -163,18 +163,3 @@ export const GenerateQuestionsFromResumeOutputSchema = z.object({
 export type GenerateQuestionsFromResumeOutput = z.infer<
   typeof GenerateQuestionsFromResumeOutputSchema
 >;
-
-
-// === summarize-speech.ts ===
-
-export const SummarizeSpeechInputSchema = z.object({
-  speechText: z
-    .string()
-    .describe('The transcribed text of the speech to be summarized.'),
-});
-export type SummarizeSpeechInput = z.infer<typeof SummarizeSpeechInputSchema>;
-
-export const SummarizeSpeechOutputSchema = z.object({
-  summary: z.string().describe('A concise summary of the speech.'),
-});
-export type SummarizeSpeechOutput = z.infer<typeof SummarizeSpeechOutputSchema>;

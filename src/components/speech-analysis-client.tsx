@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Loader2, Mic, Upload, X, FileText, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -213,11 +213,11 @@ export default function SpeechAnalysisClient() {
     }
   };
 
-  const handleDownloadPDF = useCallback(async () => {
+  const handleDownloadPDF = async () => {
     if (analysisResult) {
       await generatePdfReport(analysisResult);
     }
-  }, [analysisResult]);
+  };
   
   const resetInterviewState = () => {
     setResumeFile(null);
@@ -497,5 +497,3 @@ export default function SpeechAnalysisClient() {
     </div>
   );
 }
-
-    
