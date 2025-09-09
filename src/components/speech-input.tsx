@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Mic, Upload, X, Download, Play, Pause, AudioLines } from "lucide-react";
+import { Mic, Upload, X, Download, Pause, AudioLines } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -123,15 +123,16 @@ export default function SpeechInput({ onSpeechSampleReady }: SpeechInputProps) {
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
       let interim_transcript = "";
-      finalTranscriptRef.current = ""; // Reset final transcript
-      for (let i = 0; i < event.results.length; ++i) {
+      let final_transcript = finalTranscriptRef.current;
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
         if (event.results[i].isFinal) {
-          finalTranscriptRef.current += event.results[i][0].transcript;
+          final_transcript += event.results[i][0].transcript;
         } else {
           interim_transcript += event.results[i][0].transcript;
         }
       }
-      const newTranscript = finalTranscriptRef.current + interim_transcript;
+      finalTranscriptRef.current = final_transcript;
+      const newTranscript = final_transcript + interim_transcript;
       setTranscript(newTranscript);
     };
 
@@ -140,7 +141,7 @@ export default function SpeechInput({ onSpeechSampleReady }: SpeechInputProps) {
     };
 
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-       // These errors are common during normal operation and don't need to be shown to the user.
+      // These errors are common during normal operation and don't need to be shown to the user.
       if (event.error === 'no-speech' || event.error === 'aborted' || event.error === 'network') {
         setIsListening(false);
         return;
@@ -200,14 +201,25 @@ export default function SpeechInput({ onSpeechSampleReady }: SpeechInputProps) {
 
   const handleToggleListening = () => {
     if (!recognitionRef.current) return;
+  
     if (isListening) {
       recognitionRef.current.stop();
+      setIsListening(false);
     } else {
+      // It's possible for the recognition to be active but the state to be out of sync.
+      // This can happen if the `onend` event hasn't fired yet.
+      // A quick stop before starting can prevent the "already started" error.
+      try {
+        recognitionRef.current.stop();
+      } catch (e) {
+        // This might throw an error if it's not started, which is fine. We can ignore it.
+      }
+      
       finalTranscriptRef.current = ""; 
       setTranscript("");
       recognitionRef.current.start();
+      setIsListening(true);
     }
-    setIsListening(!isListening);
   };
   
   const startRecording = async () => {
