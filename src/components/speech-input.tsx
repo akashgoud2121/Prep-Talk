@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Mic, Upload, X, Download, Play, Pause } from "lucide-react";
+import { Mic, Upload, X, Download, Play, Pause, AudioLines } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -123,8 +123,8 @@ export default function SpeechInput({ onSpeechSampleReady }: SpeechInputProps) {
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
       let interim_transcript = "";
-      // The event.resultIndex is the key to getting only the new results
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
+      finalTranscriptRef.current = ""; // Reset final transcript
+      for (let i = 0; i < event.results.length; ++i) {
         if (event.results[i].isFinal) {
           finalTranscriptRef.current += event.results[i][0].transcript;
         } else {
@@ -203,7 +203,8 @@ export default function SpeechInput({ onSpeechSampleReady }: SpeechInputProps) {
     if (isListening) {
       recognitionRef.current.stop();
     } else {
-      finalTranscriptRef.current = transcript; // Save the current text
+      finalTranscriptRef.current = ""; 
+      setTranscript("");
       recognitionRef.current.start();
     }
     setIsListening(!isListening);
@@ -297,7 +298,7 @@ export default function SpeechInput({ onSpeechSampleReady }: SpeechInputProps) {
                 Live
             </TabsTrigger>
             <TabsTrigger value="record">
-                <Play className="mr-2 h-4 w-4" />
+                <AudioLines className="mr-2 h-4 w-4" />
                 Record
             </TabsTrigger>
             <TabsTrigger value="upload">
@@ -349,7 +350,7 @@ export default function SpeechInput({ onSpeechSampleReady }: SpeechInputProps) {
                       </>
                     ) : (
                       <Button onClick={handleToggleRecording} variant="default" className="w-full">
-                        {isRecording ? <Pause className="mr-2 h-5 w-5" /> : <Play className="mr-2 h-5 w-5" />}
+                        {isRecording ? <Pause className="mr-2 h-5 w-5" /> : <AudioLines className="mr-2 h-5 w-5" />}
                         {isRecording ? "Stop Recording" : "Start Recording"}
                       </Button>
                     )}
