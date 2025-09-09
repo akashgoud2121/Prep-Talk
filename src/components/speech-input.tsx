@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Loader2, Mic, Upload, X, Download } from "lucide-react";
+import { Mic, Upload, X, Download, Play, Pause } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -92,61 +92,76 @@ export default function SpeechInput({ onSpeechSampleReady }: SpeechInputProps) {
   const { toast } = useToast();
 
   const recognitionRef = useRef<CustomSpeechRecognition | null>(null);
+  const finalTranscriptRef = useRef<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  
+  useEffect(() => {
+    // Defer the check for SpeechRecognition until after the component has mounted
+    // This avoids hydration errors in Next.js
+    if (typeof window !== 'undefined') {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        setIsSpeechRecognitionSupported(true);
+      } else {
+        console.warn("SpeechRecognition API is not supported in this browser.");
+      }
+    }
+  }, []);
 
   useEffect(() => {
+    if (!isSpeechRecognitionSupported) return;
+
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      setIsSpeechRecognitionSupported(true);
-      const recognition = new SpeechRecognition();
-      recognitionRef.current = recognition;
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = "en-US";
+    const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
+    
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = "en-US";
 
-      let final_transcript = "";
-      recognition.onresult = (event: SpeechRecognitionEvent) => {
-        let interim_transcript = "";
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          if (event.results[i].isFinal) {
-            final_transcript += event.results[i][0].transcript;
-          } else {
-            interim_transcript += event.results[i][0].transcript;
-          }
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      let interim_transcript = "";
+      // The event.resultIndex is the key to getting only the new results
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalTranscriptRef.current += event.results[i][0].transcript;
+        } else {
+          interim_transcript += event.results[i][0].transcript;
         }
-        setTranscript(final_transcript + interim_transcript);
-      };
+      }
+      const newTranscript = finalTranscriptRef.current + interim_transcript;
+      setTranscript(newTranscript);
+    };
 
-      recognition.onend = () => {
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+       // These errors are common during normal operation and don't need to be shown to the user.
+      if (event.error === 'no-speech' || event.error === 'aborted' || event.error === 'network') {
         setIsListening(false);
-      };
+        return;
+      }
+      console.error('Speech recognition error:', event.error);
+      setIsListening(false);
+      toast({
+        variant: "destructive",
+        title: "Speech Recognition Error",
+        description: `Error: ${event.error}. Please try again.`,
+      });
+    };
 
-      recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-        if (event.error === 'no-speech' || event.error === 'aborted' || event.error === 'network') {
-          setIsListening(false);
-          return;
-        }
-
-        console.error('Speech recognition error:', event.error);
-        setIsListening(false);
-        toast({
-          variant: "destructive",
-          title: "Speech Recognition Error",
-          description: `Error: ${event.error}`,
-        });
-      };
-
-      return () => {
-        if (recognitionRef.current) {
-          recognitionRef.current.stop();
-        }
-      };
-    } else {
-      console.warn("SpeechRecognition API is not supported in this browser.");
-    }
-  }, [toast]);
+    // Cleanup function
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+        recognitionRef.current = null;
+      }
+    };
+  }, [isSpeechRecognitionSupported, toast]);
   
   useEffect(() => {
     if (currentTab === 'live') {
@@ -180,7 +195,7 @@ export default function SpeechInput({ onSpeechSampleReady }: SpeechInputProps) {
     if (isListening) {
       recognitionRef.current.stop();
     } else {
-      setTranscript("");
+      finalTranscriptRef.current = transcript; // Save the current text
       recognitionRef.current.start();
     }
     setIsListening(!isListening);
@@ -257,10 +272,11 @@ export default function SpeechInput({ onSpeechSampleReady }: SpeechInputProps) {
     }
     audioChunksRef.current = [];
   };
-
+  
   const clearAll = () => {
       clearAudio();
       setTranscript("");
+      finalTranscriptRef.current = "";
       onSpeechSampleReady(null);
   };
   
@@ -268,16 +284,16 @@ export default function SpeechInput({ onSpeechSampleReady }: SpeechInputProps) {
     <Tabs value={currentTab} onValueChange={(v) => { clearAll(); setCurrentTab(v); }} className="w-full flex flex-col">
         <CardHeader className="p-0 pb-4 border-b">
             <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="live">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" x2="12" y1="19" y2="22"></line></svg>
+            <TabsTrigger value="live" disabled={!isSpeechRecognitionSupported}>
+                <Mic className="mr-2 h-4 w-4" />
                 Live
             </TabsTrigger>
             <TabsTrigger value="record">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M2 10v3"></path><path d="M6 6v11"></path><path d="M10 3v18"></path><path d="M14 8v7"></path><path d="M18 5v13"></path><path d="M22 10v3"></path></svg>
+                <Play className="mr-2 h-4 w-4" />
                 Record
             </TabsTrigger>
             <TabsTrigger value="upload">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" x2="12" y1="3" y2="15"></line></svg>
+                <Upload className="mr-2 h-4 w-4" />
                 Upload
             </TabsTrigger>
             </TabsList>
@@ -289,11 +305,12 @@ export default function SpeechInput({ onSpeechSampleReady }: SpeechInputProps) {
             <TabsContent value="live" className="mt-0">
                 <CardContent className="p-4 flex flex-col">
                     <Textarea
-                    placeholder="Your transcribed speech will appear here..."
-                    value={transcript}
-                    onChange={(e) => setTranscript(e.target.value)}
-                    className="h-32 resize-none bg-secondary/50 border-dashed flex-grow"
-                    readOnly={isListening}
+                      placeholder={isSpeechRecognitionSupported ? "Your transcribed speech will appear here..." : "Live transcription is not supported in your browser."}
+                      value={transcript}
+                      onChange={(e) => setTranscript(e.target.value)}
+                      className="h-32 resize-none bg-secondary/50 border-dashed flex-grow"
+                      readOnly={isListening}
+                      disabled={!isSpeechRecognitionSupported}
                     />
                     <div className="flex items-center pt-4">
                         <Button onClick={handleToggleListening} className="w-full" disabled={!isSpeechRecognitionSupported}>
@@ -303,63 +320,63 @@ export default function SpeechInput({ onSpeechSampleReady }: SpeechInputProps) {
                     </div>
                 </CardContent>
             </TabsContent>
-                <TabsContent value="record" className="mt-0">
-                <CardContent className="p-4 flex flex-col">
-                    <div className="flex-grow flex items-center justify-center">
-                        {audioURL ? (
-                            <div className="w-full space-y-4">
-                                <audio controls src={audioURL} className="w-full"></audio>
-                            </div>
-                        ) : (
-                            <div className="flex flex-col items-center justify-center space-y-4 rounded-md border border-dashed bg-background h-32 w-full">
-                                <p className="text-sm text-muted-foreground">{isRecording ? "Recording in progress..." : "Click button to start recording"}</p>
-                            </div>
-                        )}
-                    </div>
-                    <div className="flex items-center pt-4 gap-4">
-                            {audioURL ? (
-                            <>
-                                <Button onClick={handleDownloadRecording} variant="secondary" className="w-full"><Download className="mr-2" /> Download</Button>
-                                <Button onClick={clearAudio} variant="outline" className="w-full"><X className="mr-2" /> Clear</Button>
-                            </>
-                            ) : (
-                            <Button onClick={handleToggleRecording} variant={isRecording ? "destructive" : "default"} className="w-full">
-                                <Mic className="mr-2 h-5 w-5" />
-                                {isRecording ? "Stop Recording" : "Start Recording"}
-                            </Button>
-                            )}
-                    </div>
-                </CardContent>
-                </TabsContent>
-                <TabsContent value="upload" className="mt-0">
-                    <CardContent className="p-4 flex flex-col">
-                    <div className="flex-grow flex items-center justify-center">
+            <TabsContent value="record" className="mt-0">
+            <CardContent className="p-4 flex flex-col">
+                <div className="flex-grow flex items-center justify-center">
                     {audioURL ? (
                         <div className="w-full space-y-4">
                             <audio controls src={audioURL} className="w-full"></audio>
-                            </div>
-                        ) : (
-                        <label htmlFor="audio-upload" className="w-full h-32 flex flex-col items-center justify-center p-6 border-2 border-dashed border-muted-foreground/30 rounded-lg cursor-pointer hover:bg-secondary/50 transition-colors">
-                            <Upload className="h-10 w-10 text-muted-foreground/50 mb-2"/>
-                            <p className="text-muted-foreground">Drop an audio file here or click.</p>
-                            <input id="audio-upload" type="file" accept="audio/*" onChange={handleFileChange} className="hidden" ref={fileInputRef}/>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center space-y-4 rounded-md border border-dashed bg-background h-32 w-full">
+                            <p className="text-sm text-muted-foreground">{isRecording ? "Recording in progress..." : "Click button to start recording"}</p>
+                        </div>
+                    )}
+                </div>
+                <div className="flex items-center pt-4 gap-4">
+                    {audioURL ? (
+                      <>
+                        <Button onClick={handleDownloadRecording} variant="secondary" className="w-full"><Download className="mr-2 h-4 w-4" /> Download</Button>
+                        <Button onClick={clearAudio} variant="outline" className="w-full"><X className="mr-2 h-4 w-4" /> Clear</Button>
+                      </>
+                    ) : (
+                      <Button onClick={handleToggleRecording} variant="default" className="w-full">
+                        {isRecording ? <Pause className="mr-2 h-5 w-5" /> : <Play className="mr-2 h-5 w-5" />}
+                        {isRecording ? "Stop Recording" : "Start Recording"}
+                      </Button>
+                    )}
+                </div>
+            </CardContent>
+            </TabsContent>
+            <TabsContent value="upload" className="mt-0">
+                <CardContent className="p-4 flex flex-col">
+                <div className="flex-grow flex items-center justify-center">
+                {audioURL ? (
+                    <div className="w-full space-y-4">
+                        <audio controls src={audioURL} className="w-full"></audio>
+                        </div>
+                    ) : (
+                    <label htmlFor="audio-upload" className="w-full h-32 flex flex-col items-center justify-center p-6 border-2 border-dashed border-muted-foreground/30 rounded-lg cursor-pointer hover:bg-secondary/50 transition-colors">
+                        <Upload className="h-10 w-10 text-muted-foreground/50 mb-2"/>
+                        <p className="text-muted-foreground">Drop an audio file here or click.</p>
+                        <input id="audio-upload" type="file" accept="audio/*" onChange={handleFileChange} className="hidden" ref={fileInputRef}/>
+                    </label>
+                    )}
+                </div>
+                    <div className="flex items-center pt-4">
+                    {audioURL ? (
+                        <Button onClick={clearAudio} variant="outline" className="w-full"><X className="mr-2 h-4 w-4" /> Clear Selection</Button>
+                    ) : (
+                        <Button asChild className="w-full">
+                        <label htmlFor="audio-upload">
+                            <Upload className="mr-2 h-5 w-5" />
+                            Browse Files
                         </label>
-                        )}
-                    </div>
-                        <div className="flex items-center pt-4">
-                        {audioURL ? (
-                            <Button onClick={clearAudio} variant="outline" className="w-full"><X className="mr-2" /> Clear Selection</Button>
-                        ) : (
-                            <Button asChild className="w-full">
-                            <label htmlFor="audio-upload">
-                                <Upload className="mr-2 h-5 w-5" />
-                                Browse Files
-                            </label>
-                            </Button>
-                        )}
-                    </div>
-                    </CardContent>
-                </TabsContent>
+                        </Button>
+                    )}
+                </div>
+                </CardContent>
+            </TabsContent>
         </div>
     </Tabs>
   )
