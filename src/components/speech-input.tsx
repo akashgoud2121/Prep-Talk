@@ -145,13 +145,21 @@ export default function SpeechInput({ onSpeechSampleReady }: SpeechInputProps) {
         setIsListening(false);
         return;
       }
-      console.error('Speech recognition error:', event.error);
+      if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+        toast({
+          variant: "destructive",
+          title: "Microphone Access Denied",
+          description: "Please check your browser's microphone permissions for this site. In Brave, you may need to disable Shields.",
+        });
+      } else {
+        console.error('Speech recognition error:', event.error);
+        toast({
+          variant: "destructive",
+          title: "Speech Recognition Error",
+          description: `Error: ${event.error}. Please try again.`,
+        });
+      }
       setIsListening(false);
-      toast({
-        variant: "destructive",
-        title: "Speech Recognition Error",
-        description: `Error: ${event.error}. Please try again.`,
-      });
     };
 
     // Cleanup function
