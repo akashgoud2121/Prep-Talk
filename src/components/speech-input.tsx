@@ -124,6 +124,11 @@ export default function SpeechInput({ onSpeechSampleReady }: SpeechInputProps) {
       };
 
       recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+        if (event.error === 'no-speech' || event.error === 'aborted' || event.error === 'network') {
+          setIsListening(false);
+          return;
+        }
+
         console.error('Speech recognition error:', event.error);
         setIsListening(false);
         toast({
@@ -359,7 +364,3 @@ export default function SpeechInput({ onSpeechSampleReady }: SpeechInputProps) {
     </Tabs>
   )
 }
-
-    
-
-    
