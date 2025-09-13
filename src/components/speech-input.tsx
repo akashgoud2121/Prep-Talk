@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Mic, Upload, X, Download, Pause, AudioLines } from "lucide-react";
+import { Mic, Upload, X, Download, Pause, AudioLines, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -92,14 +92,12 @@ export default function SpeechInput({ onSpeechSampleReady }: SpeechInputProps) {
   const { toast } = useToast();
 
   const recognitionRef = useRef<CustomSpeechRecognition | null>(null);
-  const finalTranscriptRef = useRef<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   
   useEffect(() => {
-    // Defer the check for SpeechRecognition until after the component has mounted
-    // This avoids hydration errors in Next.js
+    // This check runs only on the client-side after mounting, avoiding SSR issues.
     if (typeof window !== 'undefined') {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (SpeechRecognition) {
@@ -122,8 +120,9 @@ export default function SpeechInput({ onSpeechSampleReady }: SpeechInputProps) {
     recognition.lang = "en-US";
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
-      let interim_transcript = "";
-      let final_transcript = finalTranscriptRef.current;
+      let final_transcript = '';
+      let interim_transcript = '';
+
       for (let i = event.resultIndex; i < event.results.length; ++i) {
         if (event.results[i].isFinal) {
           final_transcript += event.results[i][0].transcript;
@@ -131,9 +130,8 @@ export default function SpeechInput({ onSpeechSampleReady }: SpeechInputProps) {
           interim_transcript += event.results[i][0].transcript;
         }
       }
-      finalTranscriptRef.current = final_transcript;
-      const newTranscript = final_transcript + interim_transcript;
-      setTranscript(newTranscript);
+      // Use a callback with the previous state to prevent race conditions
+      setTranscript(prev => prev + final_transcript + interim_transcript);
     };
 
     recognition.onend = () => {
@@ -142,7 +140,7 @@ export default function SpeechInput({ onSpeechSampleReady }: SpeechInputProps) {
 
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
       // These errors are common during normal operation and don't need to be shown to the user.
-      if (event.error === 'no-speech' || event.error === 'aborted' || event.error === 'network') {
+      if (['no-speech', 'aborted', 'network'].includes(event.error)) {
         setIsListening(false);
         return;
       }
@@ -206,19 +204,29 @@ export default function SpeechInput({ onSpeechSampleReady }: SpeechInputProps) {
       recognitionRef.current.stop();
       setIsListening(false);
     } else {
-      // It's possible for the recognition to be active but the state to be out of sync.
-      // This can happen if the `onend` event hasn't fired yet.
-      // A quick stop before starting can prevent the "already started" error.
       try {
-        recognitionRef.current.stop();
-      } catch (e) {
-        // This might throw an error if it's not started, which is fine. We can ignore it.
+        // Clear previous transcript before starting new one
+        setTranscript(""); 
+        onSpeechSampleReady("");
+        recognitionRef.current.start();
+        setIsListening(true);
+      } catch (e: any) {
+        if (e.name === 'InvalidStateError') {
+          // This can happen if start() is called while it's already starting.
+          // We can try to stop it first and then restart.
+          recognitionRef.current.stop();
+          setTimeout(() => {
+            if (recognitionRef.current) {
+               setTranscript("");
+               onSpeechSampleReady("");
+               recognitionRef.current.start();
+               setIsListening(true);
+            }
+          }, 100);
+        } else {
+          console.error("Could not start speech recognition:", e);
+        }
       }
-      
-      finalTranscriptRef.current = ""; 
-      setTranscript("");
-      recognitionRef.current.start();
-      setIsListening(true);
     }
   };
   
@@ -251,7 +259,7 @@ export default function SpeechInput({ onSpeechSampleReady }: SpeechInputProps) {
   };
 
   const stopRecording = () => {
-    if (mediaRecorderRef.current) {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
     }
@@ -272,7 +280,7 @@ export default function SpeechInput({ onSpeechSampleReady }: SpeechInputProps) {
       a.href = audioURL;
       a.download = 'recording.webm';
       document.body.appendChild(a);
-      a.click();
+a.click();
       document.body.removeChild(a);
     }
   };
@@ -288,17 +296,17 @@ export default function SpeechInput({ onSpeechSampleReady }: SpeechInputProps) {
   const clearAudio = () => {
     handleAudioBlobReady(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
-    if (isRecording) {
-      stopRecording();
-    }
+    stopRecording();
     audioChunksRef.current = [];
   };
   
   const clearAll = () => {
       clearAudio();
       setTranscript("");
-      finalTranscriptRef.current = "";
       onSpeechSampleReady(null);
+      if(isListening && recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
   };
   
   return (
@@ -402,3 +410,5 @@ export default function SpeechInput({ onSpeechSampleReady }: SpeechInputProps) {
     </Tabs>
   )
 }
+
+  
