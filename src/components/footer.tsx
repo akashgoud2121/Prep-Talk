@@ -1,5 +1,5 @@
 
-import { Linkedin } from "lucide-react";
+import { Linkedin, Link as LinkIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -35,6 +35,16 @@ export default function Footer() {
         <div className="flex flex-col items-center md:items-end space-y-2">
            <h4 className="font-semibold text-foreground">Connect With Us</h4>
           <div className="flex items-center gap-4">
+            <Link
+              href="https://cognisysai.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Cognisys AI Website"
+              className="flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
+            >
+                <LinkIcon className="h-5 w-5" />
+                <span>Website</span>
+            </Link>
             <Link
               href="https://www.linkedin.com/company/cognisys-ai/"
               target="_blank"
