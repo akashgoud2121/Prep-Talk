@@ -373,8 +373,8 @@ export default function Home() {
     try {
       const result = await analyzeSpeech(input);
       setAnalysisResult(result);
-    } catch (error) {
-      toast({ variant: "destructive", title: "Analysis Failed", description: "Something went wrong." });
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Analysis Failed", description: error.message || "An unknown error occurred." });
     } finally {
       setIsLoading(false);
     }
@@ -606,7 +606,7 @@ export default function Home() {
           </div>
 
           <div className="mt-8 w-full">
-            {isLoading && loadingMessage === "Analyzing speech..." ? (
+            {isLoading && loadingMessage.includes("Analyzing") ? (
               <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border p-12">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" /><p className="mt-4 text-muted-foreground">AI is analyzing your speech...</p>
               </div>
@@ -621,3 +621,5 @@ export default function Home() {
     </div>
   );
 }
+
+    
